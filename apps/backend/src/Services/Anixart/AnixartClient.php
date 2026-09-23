@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Anixart;
 
-final class AnixartClient
+class AnixartClient
 {
     private const string PRIMARY_BASE_URL = 'https://api.anixsekai.com';
     private const string FALLBACK_BASE_URL = 'https://api-s.anixsekai.com';
@@ -70,6 +70,21 @@ final class AnixartClient
         }
 
         return $data['release'];
+    }
+
+    /**
+     * Get release video media (trailers, teasers, openings, etc.).
+     *
+     * @return array<string, mixed>|null
+     */
+    public function getReleaseVideos(int $releaseId): ?array
+    {
+        $data = $this->get("/video/release/{$releaseId}");
+        if (!is_array($data) || ($data['code'] ?? -1) !== 0) {
+            return null;
+        }
+
+        return $data;
     }
 
     /**

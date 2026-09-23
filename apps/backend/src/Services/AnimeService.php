@@ -81,7 +81,106 @@ final class AnimeService
             throw new NotFoundException("Аниме с ID {$releaseId} не найдено");
         }
 
-        return $this->normalizeRelease($release, true);
+        $normalized = $this->normalizeRelease($release, true);
+        $trailerYtId = $this->getTrailerYoutubeId($releaseId);
+        $normalized['trailerYoutubeId'] = $trailerYtId;
+        $normalized['trailerUrl'] = $trailerYtId !== null ? "https://www.youtube.com/watch?v={$trailerYtId}" : null;
+
+        return $normalized;
+    }
+
+    /**
+     * Strictly find YouTube trailer for anime release (excluding openings, endings, clips).
+     */
+    public function getTrailerYoutubeId(int $releaseId): ?string
+    {
+        try {
+            $videoData = $this->client->getReleaseVideos($releaseId);
+            if ($videoData === null) {
+                return null;
+            }
+
+            $videos = [];
+            if (!empty($videoData['blocks']) && is_array($videoData['blocks'])) {
+                foreach ($videoData['blocks'] as $block) {
+                    if (!empty($block['videos']) && is_array($block['videos'])) {
+                        foreach ($block['videos'] as $v) {
+                            $videos[] = $v;
+                        }
+                    }
+                }
+            }
+            if (!empty($videoData['last_videos']) && is_array($videoData['last_videos'])) {
+                foreach ($videoData['last_videos'] as $v) {
+                    $videos[] = $v;
+                }
+            }
+
+            foreach ($videos as $video) {
+                $catId = (int)($video['category']['id'] ?? 0);
+                $catName = mb_strtolower((string)($video['category']['name'] ?? ''));
+                $title = mb_strtolower((string)($video['title'] ?? ''));
+
+                // Must NOT be openings, endings, clips, etc.
+                if (
+                    str_contains($catName, 'опенинг') ||
+                    str_contains($catName, 'эндинг') ||
+                    str_contains($catName, 'клип') ||
+                    str_contains($catName, 'opening') ||
+                    str_contains($catName, 'ending') ||
+                    str_contains($title, 'op') ||
+                    str_contains($title, 'ed') ||
+                    str_contains($title, 'опенинг') ||
+                    str_contains($title, 'эндинг')
+                ) {
+                    continue;
+                }
+
+                // Strict category requirement: must be Trailers/Teasers
+                $isTrailer = (
+                    $catId === 1 ||
+                    str_contains($catName, 'трейлер') ||
+                    str_contains($catName, 'тизер') ||
+                    str_contains($catName, 'trailer') ||
+                    str_contains($catName, 'pv') ||
+                    str_contains($title, 'трейлер') ||
+                    str_contains($title, 'тизер') ||
+                    str_contains($title, 'trailer') ||
+                    str_contains($title, 'pv')
+                );
+
+                if (!$isTrailer) {
+                    continue;
+                }
+
+                // Must be YouTube hosting / URL
+                $hostingName = mb_strtolower((string)($video['hosting']['name'] ?? ''));
+                $url = (string)($video['url'] ?? $video['player_url'] ?? '');
+                $hostingId = (int)($video['hosting']['id'] ?? 0);
+
+                $isYoutube = ($hostingId === 2) || str_contains($hostingName, 'youtube') || str_contains($url, 'youtu');
+                if (!$isYoutube) {
+                    continue;
+                }
+
+                $ytId = self::extractYoutubeId($url);
+                if ($ytId !== null) {
+                    return $ytId;
+                }
+            }
+        } catch (\Throwable $e) {
+            error_log("Failed to get trailer for anime {$releaseId}: " . $e->getMessage());
+        }
+
+        return null;
+    }
+
+    public static function extractYoutubeId(string $url): ?string
+    {
+        if (preg_match('/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([A-Za-z0-9_-]{11})/i', $url, $m)) {
+            return $m[1];
+        }
+        return null;
     }
 
     /**

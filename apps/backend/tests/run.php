@@ -198,6 +198,75 @@ it('AnimeService корректно нормализует метаданные 
     }
 });
 
+it('AnimeService & ContentRepository корректно извлекают ID видео с YouTube', function () {
+    $samples = [
+        'https://www.youtube.com/watch?v=qpFcQ1Bek08' => 'qpFcQ1Bek08',
+        'https://youtu.be/qpFcQ1Bek08' => 'qpFcQ1Bek08',
+        'http://youtube.com/embed/qpFcQ1Bek08' => 'qpFcQ1Bek08',
+        'https://youtu.be/TLmRzMmyYok?si=12345' => 'TLmRzMmyYok',
+        'https://www.youtube.com/watch?v=b9EkMc79ZSU&t=30s' => 'b9EkMc79ZSU',
+    ];
+
+    foreach ($samples as $url => $expectedId) {
+        $extractedAnime = \App\Services\AnimeService::extractYoutubeId($url);
+        $extractedRepo = \App\Repositories\ContentRepository::extractYoutubeId($url);
+
+        if ($extractedAnime !== $expectedId) {
+            throw new \Exception("AnimeService failed extracting {$url}, expected {$expectedId}, got " . var_export($extractedAnime, true));
+        }
+        if ($extractedRepo !== $expectedId) {
+            throw new \Exception("ContentRepository failed extracting {$url}, expected {$expectedId}, got " . var_export($extractedRepo, true));
+        }
+    }
+
+    if (\App\Services\AnimeService::extractYoutubeId('https://vk.com/video12345') !== null) {
+        throw new \Exception('Should not extract ID from non-YouTube URL');
+    }
+});
+
+it('AnimeService строго фильтрует опенинги, эндинги и оставляет только трейлеры с YouTube', function () {
+    $fakeClient = new class extends \App\Services\Anixart\AnixartClient {
+        public function getReleaseVideos(int $releaseId): ?array {
+            return [
+                'code' => 0,
+                'last_videos' => [
+                    [
+                        'category' => ['id' => 3, 'name' => 'Опенинги'],
+                        'hosting' => ['id' => 2, 'name' => 'YouTube'],
+                        'title' => 'Opening 1',
+                        'url' => 'https://youtu.be/OP111111111',
+                    ],
+                    [
+                        'category' => ['id' => 4, 'name' => 'Эндинги'],
+                        'hosting' => ['id' => 2, 'name' => 'YouTube'],
+                        'title' => 'Ending 1',
+                        'url' => 'https://youtu.be/ED222222222',
+                    ],
+                    [
+                        'category' => ['id' => 1, 'name' => 'Трейлеры'],
+                        'hosting' => ['id' => 3, 'name' => 'ВКонтакте'],
+                        'title' => 'Трейлер в ВК',
+                        'url' => 'https://vk.com/video-12345_67890',
+                    ],
+                    [
+                        'category' => ['id' => 1, 'name' => 'Трейлеры'],
+                        'hosting' => ['id' => 2, 'name' => 'YouTube'],
+                        'title' => 'Главный трейлер',
+                        'url' => 'https://youtu.be/TLmRzMmyYok',
+                    ],
+                ]
+            ];
+        }
+    };
+
+    $service = new \App\Services\AnimeService($fakeClient, new \App\Services\Anixart\Parsers\StreamResolver());
+    $trailerId = $service->getTrailerYoutubeId(12345);
+
+    if ($trailerId !== 'TLmRzMmyYok') {
+        throw new \Exception('Expected trailer ID TLmRzMmyYok, got ' . var_export($trailerId, true));
+    }
+});
+
 echo PHP_EOL . "Результаты: Успешно: {$passed}, Провалено: {$failed}" . PHP_EOL;
 
 if ($failed > 0) {

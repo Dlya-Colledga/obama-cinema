@@ -99,7 +99,7 @@ class ContentRepository
 
         $dataSql = "
             SELECT 
-                c.id, c.title, c.original_title, c.slug, c.description, c.poster_url, c.banner_url,
+                c.id, c.title, c.original_title, c.slug, c.description, c.poster_url, c.banner_url, c.trailer_url,
                 c.release_year, c.age_rating, c.duration_minutes, c.rating_cache, c.votes_count, c.is_featured,
                 ct.id as type_id, ct.code as type_code, ct.name as type_name,
                 {$userRatingSelect}, {$userBookmarkSelect},
@@ -154,7 +154,7 @@ class ContentRepository
 
         $sql = "
             SELECT 
-                c.id, c.title, c.original_title, c.slug, c.description, c.poster_url, c.banner_url,
+                c.id, c.title, c.original_title, c.slug, c.description, c.poster_url, c.banner_url, c.trailer_url,
                 c.release_year, c.age_rating, c.duration_minutes, c.rating_cache, c.votes_count, c.is_featured,
                 ct.id as type_id, ct.code as type_code, ct.name as type_name,
                 {$userRatingSelect}, {$userBookmarkSelect},
@@ -209,7 +209,7 @@ class ContentRepository
 
         $sql = "
             SELECT 
-                c.id, c.title, c.original_title, c.slug, c.description, c.poster_url, c.banner_url,
+                c.id, c.title, c.original_title, c.slug, c.description, c.poster_url, c.banner_url, c.trailer_url,
                 c.release_year, c.age_rating, c.duration_minutes, c.rating_cache, c.votes_count, c.is_featured,
                 ct.id as type_id, ct.code as type_code, ct.name as type_name,
                 {$userRatingSelect}, {$userBookmarkSelect}, {$userProgressSelect},
@@ -398,6 +398,16 @@ class ContentRepository
             'userRating' => $row['user_rating'] !== null ? (int)$row['user_rating'] : null,
             'userBookmark' => $row['user_bookmark'] ?? null,
             'userProgress' => $progress,
+            'trailerUrl' => $row['trailer_url'] ?? null,
+            'trailerYoutubeId' => !empty($row['trailer_url']) ? self::extractYoutubeId((string)$row['trailer_url']) : null,
         ];
+    }
+
+    public static function extractYoutubeId(string $url): ?string
+    {
+        if (preg_match('/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([A-Za-z0-9_-]{11})/i', $url, $m)) {
+            return $m[1];
+        }
+        return null;
     }
 }

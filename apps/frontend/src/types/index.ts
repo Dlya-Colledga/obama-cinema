@@ -66,6 +66,8 @@ export interface ContentItem {
   userRating?: number | null;
   userBookmark?: BookmarkCategory | null;
   userProgress?: WatchProgress | null;
+  trailerUrl?: string | null;
+  trailerYoutubeId?: string | null;
 }
 
 export interface Episode {

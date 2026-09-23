@@ -75,6 +75,8 @@ class CatalogService
                     'userRating' => null,
                     'userBookmark' => null,
                     'userProgress' => null,
+                    'trailerUrl' => $anime['trailerUrl'] ?? null,
+                    'trailerYoutubeId' => $anime['trailerYoutubeId'] ?? null,
                 ];
             } catch (\Throwable $e) {
                 // If not found in Anime API either, throw NotFoundException
