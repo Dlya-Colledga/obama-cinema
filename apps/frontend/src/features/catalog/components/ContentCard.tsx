@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Star, Play, Bookmark } from 'lucide-react';
 import { ContentItem } from '../../../types';
-import { Badge } from '../../../components/ui/Badge';
+import { Badge } from '@/components/ui/badge';
 
 interface ContentCardProps {
   item: ContentItem;

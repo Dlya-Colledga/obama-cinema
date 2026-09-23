@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Film, Lock, Mail, LogIn, Sparkles } from 'lucide-react';
+import { Film, Lock, Mail, LogIn, Sparkles, AlertCircle } from 'lucide-react';
 import { useAuth } from '../features/auth/AuthContext';
-import { Input } from '../components/ui/Input';
-import { Button } from '../components/ui/Button';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -42,88 +44,97 @@ export const LoginPage: React.FC = () => {
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <Link to="/" className="inline-flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-[#FF002F] flex items-center justify-center shadow-glow-red">
-              <Film className="w-5 h-5 text-white" />
+            <div className="size-10 rounded-xl bg-primary flex items-center justify-center shadow-glow-red">
+              <Film className="size-5 text-white" />
             </div>
             <span className="font-extrabold text-2xl text-white">
-              OBAMA<span className="text-[#FF002F] ml-1">CINEMA</span>
+              OBAMA<span className="text-primary ml-1">CINEMA</span>
             </span>
           </Link>
           <h2 className="text-xl font-bold text-white tracking-tight">
             Вход в личный кабинет
           </h2>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-muted-foreground">
             Получите доступ к истории просмотров, оценкам и персональным закладкам
           </p>
         </div>
 
         {/* Auth Card */}
-        <div className="p-6 sm:p-8 rounded-3xl bg-[#000000] border border-white/10 shadow-2xl space-y-6">
-          {error && (
-            <div className="p-3.5 rounded-xl bg-red-950/40 border border-red-800/50 text-red-300 text-xs">
-              {error}
-            </div>
-          )}
+        <Card className="border-white/10 shadow-2xl">
+          <CardContent className="p-6 sm:p-8 space-y-6">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="size-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Email или имя пользователя"
-              type="text"
-              placeholder="example@obama.cinema"
-              value={form.login}
-              onChange={(e) => setForm({ ...form, login: e.target.value })}
-              leftIcon={<Mail className="w-4 h-4" />}
-              required
-            />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                label="Email или имя пользователя"
+                type="text"
+                placeholder="example@obama.cinema"
+                value={form.login}
+                onChange={(e) => setForm({ ...form, login: e.target.value })}
+                leftIcon={<Mail className="size-4" />}
+                required
+              />
 
-            <Input
-              label="Пароль"
-              type="password"
-              placeholder="••••••••"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              leftIcon={<Lock className="w-4 h-4" />}
-              required
-            />
+              <Input
+                label="Пароль"
+                type="password"
+                placeholder="••••••••"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                leftIcon={<Lock className="size-4" />}
+                required
+              />
 
-            <Button
-              type="submit"
-              className="w-full mt-2"
-              size="lg"
-              isLoading={isLoading}
-              leftIcon={<LogIn className="w-4 h-4" />}
-            >
-              Войти
-            </Button>
-          </form>
-
-          {/* Demo 1-Click Login Shortcuts */}
-          <div className="pt-4 border-t border-white/5 space-y-2">
-            <span className="text-[11px] text-gray-500 font-semibold block text-center uppercase tracking-wider">
-              Быстрый вход для тестирования
-            </span>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={fillDemoAccount}
-                className="p-2 rounded-xl bg-[#20080b] hover:bg-[#2c0c10] border border-white/5 text-[11px] text-gray-300 hover:text-white flex items-center justify-center gap-1 transition-colors"
+              <Button
+                type="submit"
+                className="w-full mt-2"
+                size="lg"
+                isLoading={isLoading}
+                leftIcon={<LogIn className="size-4" />}
               >
-                <Sparkles className="w-3.5 h-3.5 text-[#FF002F]" /> Демо-юзер
-              </button>
-              <button
-                type="button"
-                onClick={fillAdminAccount}
-                className="p-2 rounded-xl bg-[#20080b] hover:bg-[#2c0c10] border border-white/5 text-[11px] text-gray-300 hover:text-white flex items-center justify-center gap-1 transition-colors"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Админ
-              </button>
-            </div>
-          </div>
-        </div>
+                Войти
+              </Button>
+            </form>
 
-        <p className="text-center text-xs text-gray-400">
+            {/* Demo 1-Click Login Shortcuts */}
+            <div className="pt-4 border-t border-white/5 space-y-2">
+              <span className="text-[11px] text-muted-foreground font-semibold block text-center uppercase tracking-wider">
+                Быстрый вход для тестирования
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={fillDemoAccount}
+                  leftIcon={<Sparkles className="size-3.5 text-primary" />}
+                  className="text-xs"
+                >
+                  Демо-юзер
+                </Button>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={fillAdminAccount}
+                  leftIcon={<Sparkles className="size-3.5 text-amber-400" />}
+                  className="text-xs"
+                >
+                  Админ
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <p className="text-center text-xs text-muted-foreground">
           Ещё нет аккаунта?{' '}
-          <Link to="/register" className="text-[#FF002F] font-semibold hover:underline">
+          <Link to="/register" className="text-primary font-semibold hover:underline">
             Зарегистрироваться
           </Link>
         </p>

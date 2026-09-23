@@ -4,7 +4,9 @@ import { ChevronLeft, Layers, Play } from 'lucide-react';
 import { api, animeApi } from '../api/client';
 import { ContentItem, StreamSource, Season, Episode, WatchProgress, AnimeDubber } from '../types';
 import { VideoPlayer } from '../features/player/VideoPlayer';
-import { Skeleton } from '../components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { BookmarkButton } from '../features/bookmarks/BookmarkButton';
 
 export const WatchPage: React.FC = () => {
@@ -119,8 +121,10 @@ export const WatchPage: React.FC = () => {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center">
         <h2 className="text-xl font-bold text-white">Видео не найдено</h2>
-        <Link to="/catalog" className="text-xs text-[#FF002F] underline mt-2 block">
-          Вернуться в каталог
+        <Link to="/catalog">
+          <Button variant="link" className="mt-2 text-primary">
+            Вернуться в каталог
+          </Button>
         </Link>
       </div>
     );
@@ -132,9 +136,9 @@ export const WatchPage: React.FC = () => {
       <div className="flex items-center justify-between">
         <Link
           to={`/content/${content.slug}`}
-          className="inline-flex items-center gap-1.5 text-xs text-gray-400 hover:text-white transition-colors"
+          className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-white transition-colors"
         >
-          <ChevronLeft className="w-4 h-4" />
+          <ChevronLeft className="size-4" />
           <span>К описанию «{content.title}»</span>
         </Link>
         <BookmarkButton
@@ -153,27 +157,27 @@ export const WatchPage: React.FC = () => {
 
       {/* Anime Voiceover Studio Selection */}
       {dubbers.length > 0 && (
-        <div className="space-y-2 py-3 px-4 rounded-2xl bg-black border border-white/10">
-          <span className="text-xs font-semibold text-gray-400">Студия озвучки (Anixart Open API):</span>
-          <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-            {dubbers.map((d) => {
-              const isSelected = selectedDubberId === d.id;
-              return (
-                <button
-                  key={d.id}
-                  onClick={() => handleSelectDubber(d.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all border shrink-0 ${
-                    isSelected
-                      ? 'bg-[#FF002F] text-white border-[#FF002F] shadow-glow-red'
-                      : 'bg-black text-gray-300 border-white/10 hover:border-white/20'
-                  }`}
-                >
-                  {d.name} {d.isSub && '(Субтитры)'}
-                </button>
-              );
-            })}
-          </div>
-        </div>
+        <Card className="bg-card border-white/10">
+          <CardContent className="p-4 space-y-2">
+            <span className="text-xs font-semibold text-muted-foreground">Студия озвучки (Anixart Open API):</span>
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+              {dubbers.map((d) => {
+                const isSelected = selectedDubberId === d.id;
+                return (
+                  <Button
+                    key={d.id}
+                    variant={isSelected ? 'default' : 'secondary'}
+                    size="sm"
+                    onClick={() => handleSelectDubber(d.id)}
+                    className="h-8 text-xs shrink-0 rounded-xl"
+                  >
+                    {d.name} {d.isSub && '(Субтитры)'}
+                  </Button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Title & Info Bar below player */}
@@ -183,17 +187,17 @@ export const WatchPage: React.FC = () => {
             {content.title}
           </h1>
           {content.originalTitle && (
-            <p className="text-xs text-gray-400 font-medium">
+            <p className="text-xs text-muted-foreground font-medium">
               {content.originalTitle}
             </p>
           )}
           {currentEpisode && (
-            <p className="text-xs text-[#FF002F] font-semibold mt-1">
+            <p className="text-xs text-primary font-semibold mt-1">
               Серия {currentEpisode.episodeNumber}: {currentEpisode.title}
             </p>
           )}
         </div>
-        <div className="flex items-center gap-2 text-xs text-gray-400">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <span>{content.releaseYear}</span>
           <span>•</span>
           <span>{content.ageRating}</span>
@@ -206,32 +210,32 @@ export const WatchPage: React.FC = () => {
       {seasons.length > 0 && (
         <div className="space-y-4 pt-2">
           <div className="flex items-center gap-2">
-            <Layers className="w-4 h-4 text-[#FF002F]" />
+            <Layers className="size-4 text-primary" />
             <h3 className="text-base font-bold text-white">Выбор серии</h3>
           </div>
 
           <div className="space-y-4">
             {seasons.map((season) => (
               <div key={season.id} className="space-y-2">
-                <h4 className="text-xs font-semibold text-gray-400">
+                <h4 className="text-xs font-semibold text-muted-foreground">
                   {season.title || `Сезон ${season.seasonNumber}`}
                 </h4>
                 <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
                   {season.episodes.map((ep) => {
                     const isCurrent = currentEpisode?.id === ep.id;
                     return (
-                      <button
+                      <Button
                         key={ep.id}
+                        variant={isCurrent ? 'default' : 'secondary'}
+                        size="sm"
                         onClick={() => handleSelectEpisode(ep)}
-                        className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2 ${
-                          isCurrent
-                            ? 'bg-[#FF002F] text-white border-[#FF002F] shadow-glow-red font-bold'
-                            : 'bg-[#000000] hover:bg-[#111111] text-gray-300 border-white/10 hover:border-white/20'
+                        className={`h-auto p-2.5 justify-start gap-2 rounded-xl text-left ${
+                          isCurrent ? 'font-bold' : ''
                         }`}
                       >
-                        <Play className={`w-3.5 h-3.5 shrink-0 ${isCurrent ? 'fill-current' : 'text-gray-500'}`} />
+                        <Play className={`size-3.5 shrink-0 ${isCurrent ? 'fill-current' : 'text-muted-foreground'}`} />
                         <span className="text-xs truncate">Серия {ep.episodeNumber}</span>
-                      </button>
+                      </Button>
                     );
                   })}
                 </div>

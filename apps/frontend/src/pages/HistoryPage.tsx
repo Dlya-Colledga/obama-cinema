@@ -3,8 +3,9 @@ import { Link } from 'react-router-dom';
 import { Clock, Play, Trash2 } from 'lucide-react';
 import { api } from '../api/client';
 import { useAuth } from '../features/auth/AuthContext';
-import { Button } from '../components/ui/Button';
-import { Skeleton } from '../components/ui/Skeleton';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface HistoryItem {
   id: number;
@@ -76,9 +77,9 @@ export const HistoryPage: React.FC = () => {
   if (!user) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center space-y-4">
-        <Clock className="w-12 h-12 text-[#FF002F] mx-auto opacity-70" />
+        <Clock className="size-12 text-primary mx-auto opacity-70" />
         <h2 className="text-xl font-bold text-white">История просмотров</h2>
-        <p className="text-xs text-gray-400">Авторизуйтесь, чтобы отслеживать историю ваших просмотров.</p>
+        <p className="text-xs text-muted-foreground">Авторизуйтесь, чтобы отслеживать историю ваших просмотров.</p>
         <Link to="/login">
           <Button size="sm">Войти в аккаунт</Button>
         </Link>
@@ -91,14 +92,14 @@ export const HistoryPage: React.FC = () => {
       {/* Title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-white/5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#FF002F]/15 text-[#FF002F] flex items-center justify-center">
-            <Clock className="w-5 h-5" />
+          <div className="size-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
+            <Clock className="size-5" />
           </div>
           <div>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
               История просмотров
             </h1>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted-foreground">
               Всего записей: {history.length}
             </p>
           </div>
@@ -106,10 +107,10 @@ export const HistoryPage: React.FC = () => {
 
         {history.length > 0 && (
           <Button
-            variant="danger"
+            variant="destructive"
             size="sm"
             onClick={handleClearAll}
-            leftIcon={<Trash2 className="w-4 h-4" />}
+            leftIcon={<Trash2 className="size-4" />}
           >
             Очистить всю историю
           </Button>
@@ -128,7 +129,7 @@ export const HistoryPage: React.FC = () => {
           {history.map((item) => (
             <div
               key={item.id}
-              className="p-4 rounded-2xl bg-[#000000] border border-white/5 hover:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors"
+              className="p-4 rounded-2xl bg-card border border-white/5 hover:border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-colors"
             >
               <div className="flex items-center gap-4 min-w-0">
                 <div className="relative w-20 aspect-[16/10] rounded-xl overflow-hidden bg-black shrink-0">
@@ -141,11 +142,11 @@ export const HistoryPage: React.FC = () => {
 
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <span className="text-[11px] font-bold text-[#FF002F]">
+                    <span className="text-[11px] font-bold text-primary">
                       {item.content.contentType.name}
                     </span>
-                    <span className="text-xs text-gray-500">•</span>
-                    <span className="text-xs text-gray-400">
+                    <span className="text-xs text-muted-foreground">•</span>
+                    <span className="text-xs text-muted-foreground">
                       {new Date(item.watchedAt).toLocaleDateString('ru-RU', {
                         day: 'numeric',
                         month: 'short',
@@ -158,7 +159,7 @@ export const HistoryPage: React.FC = () => {
                     {item.content.title}
                   </h4>
                   {item.episode && (
-                    <p className="text-xs text-gray-400 truncate">
+                    <p className="text-xs text-muted-foreground truncate">
                       Серия {item.episode.episodeNumber}: {item.episode.title}
                     </p>
                   )}
@@ -169,29 +170,33 @@ export const HistoryPage: React.FC = () => {
                 <Link
                   to={`/watch/${item.content.slug}${item.episode ? `?episode=${item.episode.id}` : ''}`}
                 >
-                  <Button size="sm" leftIcon={<Play className="w-4 h-4 fill-current" />}>
+                  <Button size="sm" leftIcon={<Play className="size-4 fill-current" />}>
                     Продолжить
                   </Button>
                 </Link>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={() => handleRemoveItem(item.id)}
-                  className="p-2 text-gray-400 hover:text-red-400 rounded-xl hover:bg-white/5 transition-colors"
+                  className="size-8 text-muted-foreground hover:text-destructive hover:bg-white/5"
                   title="Удалить из истории"
                 >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                  <Trash2 className="size-4" />
+                </Button>
               </div>
             </div>
           ))}
         </div>
       ) : (
-        <div className="text-center py-20 bg-[#000000] rounded-3xl border border-white/5 space-y-3">
-          <p className="text-sm font-bold text-gray-300">История просмотров пуста</p>
-          <p className="text-xs text-gray-500">Начните смотреть фильмы или сериалы, чтобы они сохранялись здесь.</p>
-          <Link to="/catalog">
-            <Button size="sm">Перейти в каталог</Button>
-          </Link>
-        </div>
+        <Card className="text-center py-16 bg-card border-white/5 space-y-3">
+          <CardContent className="space-y-3">
+            <p className="text-sm font-bold text-gray-300">История просмотров пуста</p>
+            <p className="text-xs text-muted-foreground">Начните смотреть фильмы или сериалы, чтобы они сохранялись здесь.</p>
+            <Link to="/catalog">
+              <Button size="sm">Перейти в каталог</Button>
+            </Link>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

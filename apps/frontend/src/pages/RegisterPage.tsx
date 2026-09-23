@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Film, Lock, Mail, User, UserPlus } from 'lucide-react';
+import { Film, Lock, Mail, User, UserPlus, AlertCircle } from 'lucide-react';
 import { useAuth } from '../features/auth/AuthContext';
-import { Input } from '../components/ui/Input';
-import { Button } from '../components/ui/Button';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export const RegisterPage: React.FC = () => {
   const { register } = useAuth();
@@ -50,85 +52,88 @@ export const RegisterPage: React.FC = () => {
         {/* Brand Header */}
         <div className="text-center space-y-2">
           <Link to="/" className="inline-flex items-center gap-2">
-            <div className="w-10 h-10 rounded-xl bg-[#FF002F] flex items-center justify-center shadow-glow-red">
-              <Film className="w-5 h-5 text-white" />
+            <div className="size-10 rounded-xl bg-primary flex items-center justify-center shadow-glow-red">
+              <Film className="size-5 text-white" />
             </div>
             <span className="font-extrabold text-2xl text-white">
-              OBAMA<span className="text-[#FF002F] ml-1">CINEMA</span>
+              OBAMA<span className="text-primary ml-1">CINEMA</span>
             </span>
           </Link>
           <h2 className="text-xl font-bold text-white tracking-tight">
             Создание аккаунта
           </h2>
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-muted-foreground">
             Присоединяйтесь к сообществу киноманов Obama Cinema
           </p>
         </div>
 
         {/* Register Card */}
-        <div className="p-6 sm:p-8 rounded-3xl bg-[#000000] border border-white/10 shadow-2xl space-y-6">
-          {error && (
-            <div className="p-3.5 rounded-xl bg-red-950/40 border border-red-800/50 text-red-300 text-xs">
-              {error}
-            </div>
-          )}
+        <Card className="border-white/10 shadow-2xl">
+          <CardContent className="p-6 sm:p-8 space-y-6">
+            {error && (
+              <Alert variant="destructive">
+                <AlertCircle className="size-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              label="Email"
-              type="email"
-              placeholder="user@example.com"
-              value={form.email}
-              onChange={(e) => setForm({ ...form, email: e.target.value })}
-              leftIcon={<Mail className="w-4 h-4" />}
-              required
-            />
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                label="Email"
+                type="email"
+                placeholder="user@example.com"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                leftIcon={<Mail className="size-4" />}
+                required
+              />
 
-            <Input
-              label="Имя пользователя"
-              type="text"
-              placeholder="cinema_lover"
-              value={form.username}
-              onChange={(e) => setForm({ ...form, username: e.target.value })}
-              leftIcon={<User className="w-4 h-4" />}
-              required
-            />
+              <Input
+                label="Имя пользователя"
+                type="text"
+                placeholder="cinema_lover"
+                value={form.username}
+                onChange={(e) => setForm({ ...form, username: e.target.value })}
+                leftIcon={<User className="size-4" />}
+                required
+              />
 
-            <Input
-              label="Пароль"
-              type="password"
-              placeholder="Минимум 6 символов"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              leftIcon={<Lock className="w-4 h-4" />}
-              required
-            />
+              <Input
+                label="Пароль"
+                type="password"
+                placeholder="Минимум 6 символов"
+                value={form.password}
+                onChange={(e) => setForm({ ...form, password: e.target.value })}
+                leftIcon={<Lock className="size-4" />}
+                required
+              />
 
-            <Input
-              label="Повторите пароль"
-              type="password"
-              placeholder="••••••••"
-              value={form.confirmPassword}
-              onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
-              leftIcon={<Lock className="w-4 h-4" />}
-              required
-            />
+              <Input
+                label="Повторите пароль"
+                type="password"
+                placeholder="••••••••"
+                value={form.confirmPassword}
+                onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                leftIcon={<Lock className="size-4" />}
+                required
+              />
 
-            <Button
-              type="submit"
-              className="w-full mt-2"
-              size="lg"
-              isLoading={isLoading}
-              leftIcon={<UserPlus className="w-4 h-4" />}
-            >
-              Зарегистрироваться
-            </Button>
-          </form>
-        </div>
+              <Button
+                type="submit"
+                className="w-full mt-2"
+                size="lg"
+                isLoading={isLoading}
+                leftIcon={<UserPlus className="size-4" />}
+              >
+                Зарегистрироваться
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
 
-        <p className="text-center text-xs text-gray-400">
+        <p className="text-center text-xs text-muted-foreground">
           Уже есть аккаунт?{' '}
-          <Link to="/login" className="text-[#FF002F] font-semibold hover:underline">
+          <Link to="/login" className="text-primary font-semibold hover:underline">
             Войти в систему
           </Link>
         </p>

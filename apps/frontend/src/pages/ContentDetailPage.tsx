@@ -3,9 +3,10 @@ import { useParams, Link } from 'react-router-dom';
 import { Play, Calendar, Clock, Globe, Film, Layers } from 'lucide-react';
 import { api } from '../api/client';
 import { ContentItem, Season } from '../types';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/Badge';
-import { Skeleton } from '../components/ui/Skeleton';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Card, CardContent } from '@/components/ui/card';
 import { RatingWidget } from '../features/ratings/RatingWidget';
 import { BookmarkButton } from '../features/bookmarks/BookmarkButton';
 import { CommentSection } from '../features/comments/CommentSection';
@@ -63,7 +64,7 @@ export const ContentDetailPage: React.FC = () => {
     return (
       <div className="max-w-7xl mx-auto px-4 py-20 text-center space-y-4">
         <h2 className="text-xl font-bold text-white">Контент не найден</h2>
-        <p className="text-xs text-gray-400">Возможно, тайтл был удалён или ссылка некорректна.</p>
+        <p className="text-xs text-muted-foreground">Возможно, тайтл был удалён или ссылка некорректна.</p>
         <Link to="/catalog">
           <Button size="sm">Перейти в каталог</Button>
         </Link>
@@ -82,8 +83,8 @@ export const ContentDetailPage: React.FC = () => {
           alt={content.title}
           className="w-full h-full object-cover object-center"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#000000] via-[#000000]/60 to-transparent" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#000000] via-[#000000]/70 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-background via-background/70 to-transparent" />
       </section>
 
       {/* Main Content Details */}
@@ -91,7 +92,7 @@ export const ContentDetailPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-8 items-start">
           {/* HD Poster */}
           <div className="md:col-span-4 lg:col-span-3">
-            <div className="aspect-[2/3] w-full rounded-3xl overflow-hidden bg-[#000000] border border-white/10 shadow-2xl relative group">
+            <div className="aspect-[2/3] w-full rounded-3xl overflow-hidden bg-background border border-white/10 shadow-2xl relative group">
               <img
                 src={content.posterUrl}
                 alt={content.title}
@@ -105,7 +106,7 @@ export const ContentDetailPage: React.FC = () => {
 
             <div className="mt-4 flex flex-col gap-2.5">
               <Link to={`/watch/${content.slug}`} className="w-full">
-                <Button size="lg" className="w-full" leftIcon={<Play className="w-5 h-5 fill-current" />}>
+                <Button size="lg" className="w-full" leftIcon={<Play className="size-5 fill-current" />}>
                   Смотреть онлайн
                 </Button>
               </Link>
@@ -127,14 +128,14 @@ export const ContentDetailPage: React.FC = () => {
                 {content.title}
               </h1>
               {content.originalTitle && (
-                <p className="text-sm sm:text-base text-gray-400 mt-1 font-medium">
+                <p className="text-sm sm:text-base text-muted-foreground mt-1 font-medium">
                   {content.originalTitle}
                 </p>
               )}
             </div>
 
             {/* Interactive Rating & Score */}
-            <div className="p-4 rounded-2xl bg-[#000000] border border-white/5 flex flex-wrap items-center justify-between gap-4">
+            <div className="p-4 rounded-2xl bg-card border border-white/5 flex flex-wrap items-center justify-between gap-4">
               <RatingWidget
                 contentId={content.id}
                 initialRating={content.userRating}
@@ -153,39 +154,47 @@ export const ContentDetailPage: React.FC = () => {
 
             {/* Quick Meta Stats Grid */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-              <div className="p-3.5 rounded-xl bg-[#000000] border border-white/5 space-y-1">
-                <span className="text-[11px] text-gray-400 flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-[#FF002F]" /> Год премьеры
-                </span>
-                <p className="text-xs font-bold text-white">{content.releaseYear}</p>
-              </div>
+              <Card className="border-white/5 bg-card">
+                <CardContent className="p-3.5 space-y-1">
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Calendar className="size-3.5 text-primary" /> Год премьеры
+                  </span>
+                  <p className="text-xs font-bold text-white">{content.releaseYear}</p>
+                </CardContent>
+              </Card>
 
               {content.durationMinutes && (
-                <div className="p-3.5 rounded-xl bg-[#000000] border border-white/5 space-y-1">
-                  <span className="text-[11px] text-gray-400 flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-[#FF002F]" /> Длительность
-                  </span>
-                  <p className="text-xs font-bold text-white">{content.durationMinutes} мин</p>
-                </div>
+                <Card className="border-white/5 bg-card">
+                  <CardContent className="p-3.5 space-y-1">
+                    <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <Clock className="size-3.5 text-primary" /> Длительность
+                    </span>
+                    <p className="text-xs font-bold text-white">{content.durationMinutes} мин</p>
+                  </CardContent>
+                </Card>
               )}
 
               {content.countries.length > 0 && (
-                <div className="p-3.5 rounded-xl bg-[#000000] border border-white/5 space-y-1">
-                  <span className="text-[11px] text-gray-400 flex items-center gap-1">
-                    <Globe className="w-3.5 h-3.5 text-[#FF002F]" /> Страна
-                  </span>
-                  <p className="text-xs font-bold text-white truncate">
-                    {content.countries.map(c => c.name).join(', ')}
-                  </p>
-                </div>
+                <Card className="border-white/5 bg-card">
+                  <CardContent className="p-3.5 space-y-1">
+                    <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                      <Globe className="size-3.5 text-primary" /> Страна
+                    </span>
+                    <p className="text-xs font-bold text-white truncate">
+                      {content.countries.map(c => c.name).join(', ')}
+                    </p>
+                  </CardContent>
+                </Card>
               )}
 
-              <div className="p-3.5 rounded-xl bg-[#000000] border border-white/5 space-y-1">
-                <span className="text-[11px] text-gray-400 flex items-center gap-1">
-                  <Film className="w-3.5 h-3.5 text-[#FF002F]" /> Категория
-                </span>
-                <p className="text-xs font-bold text-white">{content.contentType.name}</p>
-              </div>
+              <Card className="border-white/5 bg-card">
+                <CardContent className="p-3.5 space-y-1">
+                  <span className="text-[11px] text-muted-foreground flex items-center gap-1">
+                    <Film className="size-3.5 text-primary" /> Категория
+                  </span>
+                  <p className="text-xs font-bold text-white">{content.contentType.name}</p>
+                </CardContent>
+              </Card>
             </div>
 
             {/* Description */}
@@ -199,13 +208,13 @@ export const ContentDetailPage: React.FC = () => {
             {/* Genres Tag Cloud */}
             {content.genres.length > 0 && (
               <div className="space-y-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-gray-400">Жанры</h4>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Жанры</h4>
                 <div className="flex flex-wrap gap-2">
                   {content.genres.map((g) => (
                     <Link
                       key={g.slug}
                       to={`/catalog?genre=${g.slug}`}
-                      className="px-3 py-1 rounded-xl text-xs bg-[#1f080b] hover:bg-[#2c0b10] text-gray-300 hover:text-white border border-white/5 transition-colors"
+                      className="px-3 py-1 rounded-xl text-xs bg-secondary hover:bg-white/10 text-gray-300 hover:text-white border border-white/5 transition-colors"
                     >
                       {g.name}
                     </Link>
@@ -218,26 +227,24 @@ export const ContentDetailPage: React.FC = () => {
 
         {/* Seasons & Episodes Section (for series and anime) */}
         {seasons.length > 0 && (
-          <section className="space-y-4 bg-[#000000] rounded-3xl p-6 sm:p-8 border border-white/5">
+          <section className="space-y-4 bg-card rounded-3xl p-6 sm:p-8 border border-white/5">
             <div className="flex items-center gap-2 mb-4">
-              <Layers className="w-5 h-5 text-[#FF002F]" />
+              <Layers className="size-5 text-primary" />
               <h3 className="text-lg font-bold text-white">Сезоны и серии</h3>
             </div>
 
             {/* Season Selector Tabs */}
             <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
               {seasons.map((s) => (
-                <button
+                <Button
                   key={s.id}
+                  variant={selectedSeasonNumber === s.seasonNumber ? 'default' : 'secondary'}
+                  size="sm"
                   onClick={() => setSelectedSeasonNumber(s.seasonNumber)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
-                    selectedSeasonNumber === s.seasonNumber
-                      ? 'bg-[#FF002F] text-white border-[#FF002F] shadow-glow-red'
-                      : 'bg-[#000000] text-gray-300 border-white/10 hover:border-white/20'
-                  }`}
+                  className="rounded-xl whitespace-nowrap"
                 >
                   {s.title || `Сезон ${s.seasonNumber}`}
-                </button>
+                </Button>
               ))}
             </div>
 
@@ -248,23 +255,23 @@ export const ContentDetailPage: React.FC = () => {
                   <Link
                     key={ep.id}
                     to={`/watch/${content.slug}?episode=${ep.id}`}
-                    className="group p-3.5 rounded-2xl bg-[#000000] border border-white/5 hover:border-[#FF002F]/40 hover:shadow-glow-red flex items-center justify-between gap-3 transition-all"
+                    className="group p-3.5 rounded-2xl bg-background border border-white/5 hover:border-primary/40 hover:shadow-glow-red flex items-center justify-between gap-3 transition-all"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <div className="w-9 h-9 rounded-xl bg-[#22090c] group-hover:bg-[#FF002F] text-white flex items-center justify-center shrink-0 transition-colors">
-                        <Play className="w-4 h-4 fill-current translate-x-0.5" />
+                      <div className="size-9 rounded-xl bg-secondary group-hover:bg-primary text-white flex items-center justify-center shrink-0 transition-colors">
+                        <Play className="size-4 fill-current translate-x-0.5" />
                       </div>
                       <div className="min-w-0">
-                        <span className="text-[11px] text-[#FF002F] font-semibold block">
+                        <span className="text-[11px] text-primary font-semibold block">
                           Серия {ep.episodeNumber}
                         </span>
-                        <h5 className="text-xs font-bold text-white truncate group-hover:text-[#FF002F] transition-colors">
+                        <h5 className="text-xs font-bold text-white truncate group-hover:text-primary transition-colors">
                           {ep.title || `Эпизод ${ep.episodeNumber}`}
                         </h5>
                       </div>
                     </div>
                     {ep.durationMinutes && (
-                      <span className="text-[11px] text-gray-500 shrink-0">
+                      <span className="text-[11px] text-muted-foreground shrink-0">
                         {ep.durationMinutes} мин
                       </span>
                     )}

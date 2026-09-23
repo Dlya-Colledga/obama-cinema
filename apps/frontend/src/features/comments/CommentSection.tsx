@@ -3,8 +3,16 @@ import { MessageSquare, Trash2, Edit2, Send } from 'lucide-react';
 import { api } from '../../api/client';
 import { Comment, PaginationMeta } from '../../types';
 import { useAuth } from '../auth/AuthContext';
-import { Button } from '../../components/ui/Button';
-import { Modal } from '../../components/ui/Modal';
+import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface CommentSectionProps {
   contentId: number;
@@ -88,15 +96,15 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ contentId }) => 
   };
 
   return (
-    <section className="mt-12 bg-[#140405] rounded-3xl p-6 sm:p-8 border border-white/5">
+    <section className="mt-12 bg-card rounded-3xl p-6 sm:p-8 border border-white/5">
       <div className="flex items-center justify-between mb-8 pb-4 border-b border-white/5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#FF002F]/15 text-[#FF002F] flex items-center justify-center">
-            <MessageSquare className="w-5 h-5" />
+          <div className="size-10 rounded-xl bg-primary/15 text-primary flex items-center justify-center">
+            <MessageSquare className="size-5" />
           </div>
           <div>
             <h3 className="text-lg font-bold text-white">Комментарии и отзывы</h3>
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-muted-foreground">
               Всего {meta?.total ?? comments.length}
             </span>
           </div>
@@ -107,16 +115,17 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ contentId }) => 
       {user ? (
         <form onSubmit={handleSubmit} className="mb-10">
           <div className="flex gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[#FF002F]/20 text-[#FF002F] flex items-center justify-center font-bold text-sm shrink-0">
-              {user.username.charAt(0).toUpperCase()}
-            </div>
+            <Avatar className="size-10 shrink-0">
+              {user.profile?.avatarUrl && <AvatarImage src={user.profile.avatarUrl} alt={user.username} />}
+              <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+            </Avatar>
             <div className="flex-grow space-y-2">
-              <textarea
+              <Textarea
                 value={newText}
                 onChange={(e) => setNewText(e.target.value)}
                 placeholder="Поделитесь впечатлениями о просмотре..."
                 rows={3}
-                className="w-full bg-[#000000] text-white text-sm rounded-2xl p-4 border border-white/10 focus:border-[#FF002F] focus:ring-1 focus:ring-[#FF002F]/30 focus:outline-none placeholder:text-gray-500 transition-all resize-none"
+                className="resize-none"
               />
               <div className="flex justify-end">
                 <Button
@@ -124,7 +133,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ contentId }) => 
                   size="sm"
                   isLoading={isSubmitting}
                   disabled={!newText.trim()}
-                  leftIcon={<Send className="w-3.5 h-3.5" />}
+                  leftIcon={<Send className="size-3.5" />}
                 >
                   Отправить
                 </Button>
@@ -133,8 +142,8 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ contentId }) => 
           </div>
         </form>
       ) : (
-        <div className="mb-10 p-5 rounded-2xl bg-[#1a0608] border border-white/5 flex items-center justify-between">
-          <span className="text-xs text-gray-300">
+        <div className="mb-10 p-5 rounded-2xl bg-secondary/40 border border-white/5 flex items-center justify-between">
+          <span className="text-xs text-muted-foreground">
             Войдите в аккаунт, чтобы оставить свой отзыв или комментарий.
           </span>
           <a href="/login">
@@ -152,36 +161,33 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ contentId }) => 
           return (
             <div
               key={comment.id}
-              className="p-4 rounded-2xl bg-[#000000] border border-white/5 hover:border-white/10 transition-colors"
+              className="p-4 rounded-2xl bg-background border border-white/5 hover:border-white/10 transition-colors"
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2.5">
-                  {comment.user.avatarUrl ? (
-                    <img
-                      src={comment.user.avatarUrl}
-                      alt={comment.user.username}
-                      className="w-8 h-8 rounded-lg object-cover"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-lg bg-[#22090c] text-white flex items-center justify-center text-xs font-bold border border-white/10">
+                  <Avatar className="size-8">
+                    {comment.user.avatarUrl && (
+                      <AvatarImage src={comment.user.avatarUrl} alt={comment.user.username} />
+                    )}
+                    <AvatarFallback className="text-xs">
                       {comment.user.username.charAt(0).toUpperCase()}
-                    </div>
-                  )}
+                    </AvatarFallback>
+                  </Avatar>
                   <div>
                     <div className="flex items-center gap-2">
                       <span className="text-xs font-bold text-white">{comment.user.username}</span>
                       {comment.user.role === 'admin' && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-950 text-red-400 font-semibold border border-red-800/40">
+                        <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
                           Админ
-                        </span>
+                        </Badge>
                       )}
                       {comment.user.role === 'moderator' && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-950 text-blue-400 font-semibold border border-blue-800/40">
+                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-blue-500/40 text-blue-400 bg-blue-950/40">
                           Критик
-                        </span>
+                        </Badge>
                       )}
                     </div>
-                    <div className="flex items-center gap-1.5 text-[10px] text-gray-500">
+                    <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
                       <span>{new Date(comment.createdAt).toLocaleDateString('ru-RU')}</span>
                       {comment.isEdited && <span>(изменено)</span>}
                     </div>
@@ -191,25 +197,29 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ contentId }) => 
                 {/* Actions for Author / Mod */}
                 <div className="flex items-center gap-1">
                   {isAuthor && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 text-muted-foreground hover:text-white"
                       onClick={() => {
                         setEditingComment(comment);
                         setEditText(comment.text);
                       }}
-                      className="p-1 text-gray-400 hover:text-white rounded"
                       title="Редактировать"
                     >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
+                      <Edit2 className="size-3.5" />
+                    </Button>
                   )}
                   {canDelete && (
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 text-muted-foreground hover:text-destructive"
                       onClick={() => handleDelete(comment.id)}
-                      className="p-1 text-gray-400 hover:text-red-400 rounded"
                       title="Удалить"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                      <Trash2 className="size-3.5" />
+                    </Button>
                   )}
                 </div>
               </div>
@@ -222,7 +232,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ contentId }) => 
         })}
 
         {!isLoading && comments.length === 0 && (
-          <div className="text-center py-10 text-gray-500 text-xs">
+          <div className="text-center py-10 text-muted-foreground text-xs">
             Пока нет ни одного комментария. Станьте первым!
           </div>
         )}
@@ -238,7 +248,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ contentId }) => 
             >
               Назад
             </Button>
-            <span className="flex items-center px-3 text-xs text-gray-400 font-medium">
+            <span className="flex items-center px-3 text-xs text-muted-foreground font-medium">
               {page} из {meta.totalPages}
             </span>
             <Button
@@ -253,29 +263,30 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ contentId }) => 
         )}
       </div>
 
-      {/* Edit Comment Modal */}
-      <Modal
-        isOpen={editingComment !== null}
-        onClose={() => setEditingComment(null)}
-        title="Редактирование комментария"
-      >
-        <div className="space-y-4">
-          <textarea
-            value={editText}
-            onChange={(e) => setEditText(e.target.value)}
-            rows={4}
-            className="w-full bg-[#1e080b] text-white text-sm rounded-xl p-3 border border-white/10 focus:border-[#FF002F] focus:outline-none"
-          />
-          <div className="flex justify-end gap-2">
-            <Button variant="ghost" size="sm" onClick={() => setEditingComment(null)}>
-              Отмена
-            </Button>
-            <Button size="sm" isLoading={isEditing} onClick={handleUpdate}>
-              Сохранить
-            </Button>
+      {/* Edit Comment Dialog */}
+      <Dialog open={editingComment !== null} onOpenChange={(open) => !open && setEditingComment(null)}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Редактирование комментария</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <Textarea
+              value={editText}
+              onChange={(e) => setEditText(e.target.value)}
+              rows={4}
+              className="resize-none"
+            />
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setEditingComment(null)}>
+                Отмена
+              </Button>
+              <Button size="sm" isLoading={isEditing} onClick={handleUpdate}>
+                Сохранить
+              </Button>
+            </div>
           </div>
-        </div>
-      </Modal>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };

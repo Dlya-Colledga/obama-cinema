@@ -5,9 +5,9 @@ import { api } from '../api/client';
 import { ContentItem, WatchProgress } from '../types';
 import { useAuth } from '../features/auth/AuthContext';
 import { ContentCard } from '../features/catalog/components/ContentCard';
-import { Button } from '../components/ui/Button';
-import { Badge } from '../components/ui/Badge';
-import { Skeleton } from '../components/ui/Skeleton';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { BookmarkButton } from '../features/bookmarks/BookmarkButton';
 
 export const HomePage: React.FC = () => {

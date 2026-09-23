@@ -3,7 +3,14 @@ import { Bookmark, Check, ChevronDown } from 'lucide-react';
 import { api } from '../../api/client';
 import { BookmarkCategory, BOOKMARK_LABELS } from '../../types';
 import { useAuth } from '../auth/AuthContext';
-import { Button } from '../../components/ui/Button';
+import { Button } from '@/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
 interface BookmarkButtonProps {
   contentId: number;
@@ -18,7 +25,6 @@ export const BookmarkButton: React.FC<BookmarkButtonProps> = ({
 }) => {
   const { user } = useAuth();
   const [currentCategory, setCurrentCategory] = useState<BookmarkCategory | null>(initialBookmark);
-  const [isOpen, setIsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const categories: BookmarkCategory[] = [
@@ -36,7 +42,6 @@ export const BookmarkButton: React.FC<BookmarkButtonProps> = ({
     }
 
     setIsLoading(true);
-    setIsOpen(false);
     try {
       if (currentCategory === cat) {
         // Toggle off / remove
@@ -58,7 +63,6 @@ export const BookmarkButton: React.FC<BookmarkButtonProps> = ({
   const handleRemove = async () => {
     if (!user) return;
     setIsLoading(true);
-    setIsOpen(false);
     try {
       await api.delete(`/bookmarks/${contentId}`);
       setCurrentCategory(null);
@@ -71,53 +75,45 @@ export const BookmarkButton: React.FC<BookmarkButtonProps> = ({
   };
 
   return (
-    <div className="relative inline-block text-left">
-      <Button
-        variant={currentCategory ? 'primary' : 'secondary'}
-        onClick={() => setIsOpen(!isOpen)}
-        isLoading={isLoading}
-        leftIcon={<Bookmark className={`w-4 h-4 ${currentCategory ? 'fill-current' : ''}`} />}
-        rightIcon={<ChevronDown className="w-4 h-4 ml-1 opacity-70" />}
-      >
-        {currentCategory ? BOOKMARK_LABELS[currentCategory] : 'В закладки'}
-      </Button>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant={currentCategory ? 'default' : 'secondary'}
+          isLoading={isLoading}
+          leftIcon={<Bookmark className={`size-4 ${currentCategory ? 'fill-current' : ''}`} />}
+          rightIcon={<ChevronDown className="size-4 ml-1 opacity-70" />}
+        >
+          {currentCategory ? BOOKMARK_LABELS[currentCategory] : 'В закладки'}
+        </Button>
+      </DropdownMenuTrigger>
 
-      {isOpen && (
-        <>
-          <div
-            className="fixed inset-0 z-20"
-            onClick={() => setIsOpen(false)}
-          />
-          <div className="absolute right-0 sm:left-0 mt-2 w-52 rounded-2xl bg-[#1e080b] border border-[#FF002F]/20 shadow-2xl z-30 py-2 divide-y divide-white/5 animate-in fade-in duration-150">
-            <div className="py-1">
-              {categories.map((cat) => {
-                const isSelected = currentCategory === cat;
-                return (
-                  <button
-                    key={cat}
-                    onClick={() => handleSelectCategory(cat)}
-                    className="w-full text-left px-4 py-2 text-xs text-gray-200 hover:text-white hover:bg-white/5 flex items-center justify-between transition-colors"
-                  >
-                    <span>{BOOKMARK_LABELS[cat]}</span>
-                    {isSelected && <Check className="w-4 h-4 text-[#FF002F]" />}
-                  </button>
-                );
-              })}
-            </div>
+      <DropdownMenuContent align="start" className="w-52 border-primary/20">
+        {categories.map((cat) => {
+          const isSelected = currentCategory === cat;
+          return (
+            <DropdownMenuItem
+              key={cat}
+              onClick={() => handleSelectCategory(cat)}
+              className="flex items-center justify-between text-xs py-2"
+            >
+              <span>{BOOKMARK_LABELS[cat]}</span>
+              {isSelected && <Check className="size-4 text-primary" />}
+            </DropdownMenuItem>
+          );
+        })}
 
-            {currentCategory && (
-              <div className="pt-1">
-                <button
-                  onClick={handleRemove}
-                  className="w-full text-left px-4 py-2 text-xs text-red-400 hover:bg-red-950/40 transition-colors"
-                >
-                  Удалить из закладок
-                </button>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-    </div>
+        {currentCategory && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={handleRemove}
+              className="text-xs text-destructive hover:bg-destructive/10 focus:bg-destructive/10 focus:text-destructive py-2"
+            >
+              Удалить из закладок
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };

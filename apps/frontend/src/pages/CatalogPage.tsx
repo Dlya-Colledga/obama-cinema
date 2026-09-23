@@ -4,8 +4,15 @@ import { SlidersHorizontal, RotateCcw } from 'lucide-react';
 import { api, animeApi } from '../api/client';
 import { ContentItem, ContentType, Genre, Country, PaginationMeta } from '../types';
 import { ContentCard } from '../features/catalog/components/ContentCard';
-import { Button } from '../components/ui/Button';
-import { Skeleton } from '../components/ui/Skeleton';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export const CatalogPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -99,12 +106,12 @@ export const CatalogPage: React.FC = () => {
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams);
-    if (value) {
+    if (value && value !== 'ALL') {
       params.set(key, value);
     } else {
       params.delete(key);
     }
-    params.set('page', '1'); // Reset to first page
+    params.set('page', '1');
     setSearchParams(params);
   };
 
@@ -120,7 +127,7 @@ export const CatalogPage: React.FC = () => {
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             Каталог видеоконтента
           </h1>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             Найдено {meta?.total ?? items.length} тайтлов по вашим параметрам
           </p>
         </div>
@@ -130,101 +137,115 @@ export const CatalogPage: React.FC = () => {
             variant="ghost"
             size="sm"
             onClick={resetFilters}
-            leftIcon={<RotateCcw className="w-4 h-4" />}
+            leftIcon={<RotateCcw className="size-4" />}
           >
             Сбросить фильтры
           </Button>
         )}
       </div>
 
-      {/* Content Type Filter Pills */}
+      {/* Content Type Filter Buttons */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 no-scrollbar">
-        <button
+        <Button
+          variant={!selectedType ? 'default' : 'secondary'}
+          size="sm"
           onClick={() => updateFilter('type', '')}
-          className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
-            !selectedType
-              ? 'bg-[#FF002F] text-white border-[#FF002F] shadow-glow-red'
-              : 'bg-[#000000] text-gray-300 border-white/10 hover:border-white/20'
-          }`}
+          className="rounded-xl whitespace-nowrap"
         >
           Все категории
-        </button>
+        </Button>
         {types.map((t) => {
           const isSelected = selectedType === t.code;
           return (
-            <button
+            <Button
               key={t.code}
+              variant={isSelected ? 'default' : 'secondary'}
+              size="sm"
               onClick={() => updateFilter('type', t.code)}
-              className={`px-4 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
-                isSelected
-                  ? 'bg-[#FF002F] text-white border-[#FF002F] shadow-glow-red'
-                  : 'bg-[#000000] text-gray-300 border-white/10 hover:border-white/20'
-              }`}
+              className="rounded-xl whitespace-nowrap"
             >
               {t.name}
-            </button>
+            </Button>
           );
         })}
       </div>
 
-      {/* Advanced Filter Toolbar */}
-      <div className="p-4 rounded-2xl bg-[#000000] border border-white/5 flex flex-wrap items-center gap-3">
-        <div className="flex items-center gap-1.5 text-xs text-gray-400 font-semibold mr-2">
-          <SlidersHorizontal className="w-4 h-4 text-[#FF002F]" /> Фильтры:
+      {/* Advanced Filter Toolbar with shadcn Selects */}
+      <div className="p-4 rounded-2xl bg-card border border-white/5 flex flex-wrap items-center gap-3">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-semibold mr-2">
+          <SlidersHorizontal className="size-4 text-primary" /> Фильтры:
         </div>
 
         {/* Genre Selector */}
-        <select
-          value={selectedGenre}
-          onChange={(e) => updateFilter('genre', e.target.value)}
-          className="bg-[#20080b] text-white text-xs rounded-xl px-3 py-2 border border-white/10 focus:border-[#FF002F] focus:outline-none cursor-pointer"
-        >
-          <option value="">Все жанры</option>
-          {genres.map((g) => (
-            <option key={g.slug} value={g.slug}>
-              {g.name}
-            </option>
-          ))}
-        </select>
+        <div className="w-40 sm:w-48">
+          <Select
+            value={selectedGenre || 'ALL'}
+            onValueChange={(val) => updateFilter('genre', val)}
+          >
+            <SelectTrigger className="h-9 text-xs">
+              <SelectValue placeholder="Все жанры" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Все жанры</SelectItem>
+              {genres.map((g) => (
+                <SelectItem key={g.slug} value={g.slug}>
+                  {g.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Country Selector */}
-        <select
-          value={selectedCountry}
-          onChange={(e) => updateFilter('country', e.target.value)}
-          className="bg-[#20080b] text-white text-xs rounded-xl px-3 py-2 border border-white/10 focus:border-[#FF002F] focus:outline-none cursor-pointer"
-        >
-          <option value="">Все страны</option>
-          {countries.map((c) => (
-            <option key={c.code} value={c.code}>
-              {c.name}
-            </option>
-          ))}
-        </select>
+        <div className="w-40 sm:w-48">
+          <Select
+            value={selectedCountry || 'ALL'}
+            onValueChange={(val) => updateFilter('country', val)}
+          >
+            <SelectTrigger className="h-9 text-xs">
+              <SelectValue placeholder="Все страны" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Все страны</SelectItem>
+              {countries.map((c) => (
+                <SelectItem key={c.code} value={c.code}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Rating 7+ Toggle */}
-        <button
+        <Button
+          variant={minRating === '7.0' ? 'default' : 'secondary'}
+          size="sm"
           onClick={() => updateFilter('rating_from', minRating === '7.0' ? '' : '7.0')}
-          className={`px-3 py-2 rounded-xl text-xs font-semibold border transition-all ${
+          className={`h-9 text-xs rounded-xl ${
             minRating === '7.0'
-              ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
-              : 'bg-[#20080b] text-gray-300 border-white/10 hover:border-white/20'
+              ? 'bg-emerald-500 hover:bg-emerald-600 text-white border-transparent'
+              : ''
           }`}
         >
           Рейтинг 7.0+
-        </button>
+        </Button>
 
         {/* Sort Order */}
-        <div className="ml-auto">
-          <select
+        <div className="ml-auto w-44 sm:w-52">
+          <Select
             value={selectedSort}
-            onChange={(e) => updateFilter('sort', e.target.value)}
-            className="bg-[#20080b] text-white text-xs rounded-xl px-3 py-2 border border-white/10 focus:border-[#FF002F] focus:outline-none cursor-pointer"
+            onValueChange={(val) => updateFilter('sort', val)}
           >
-            <option value="rating">По рейтингу</option>
-            <option value="popular">По популярности</option>
-            <option value="newest">Сначала новые</option>
-            <option value="title">По названию (А-Я)</option>
-          </select>
+            <SelectTrigger className="h-9 text-xs">
+              <SelectValue placeholder="Сортировка" />
+            </SelectTrigger>
+            <SelectContent align="end">
+              <SelectItem value="rating">По рейтингу</SelectItem>
+              <SelectItem value="popular">По популярности</SelectItem>
+              <SelectItem value="newest">Сначала новые</SelectItem>
+              <SelectItem value="title">По названию (А-Я)</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -242,9 +263,9 @@ export const CatalogPage: React.FC = () => {
           ))}
         </div>
       ) : (
-        <div className="text-center py-20 bg-[#000000] rounded-3xl border border-white/5 space-y-3">
+        <div className="text-center py-20 bg-card rounded-3xl border border-white/5 space-y-3">
           <p className="text-base font-bold text-white">Ничего не найдено</p>
-          <p className="text-xs text-gray-400 max-w-sm mx-auto">
+          <p className="text-xs text-muted-foreground max-w-sm mx-auto">
             Попробуйте изменить выбранные жанры, страны или снизить фильтр минимального рейтинга.
           </p>
           <Button variant="secondary" size="sm" onClick={resetFilters}>
@@ -265,7 +286,7 @@ export const CatalogPage: React.FC = () => {
             Назад
           </Button>
 
-          <span className="text-xs text-gray-400 font-medium px-4">
+          <span className="text-xs text-muted-foreground font-medium px-4">
             Страница {page} из {meta.totalPages}
           </span>
 

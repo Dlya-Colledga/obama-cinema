@@ -4,9 +4,18 @@ import { User as UserIcon, Mail, Calendar, Shield, LogOut, Edit3, Bookmark, Cloc
 import { api } from '../api/client';
 import { User } from '../types';
 import { useAuth } from '../features/auth/AuthContext';
-import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
-import { Modal } from '../components/ui/Modal';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export const ProfilePage: React.FC = () => {
   const { user, logout, refreshUser } = useAuth();
@@ -47,25 +56,20 @@ export const ProfilePage: React.FC = () => {
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-8">
       {/* Profile Header Card */}
-      <div className="p-6 sm:p-8 rounded-3xl bg-[#000000] border border-white/10 shadow-2xl relative overflow-hidden">
+      <Card className="border-white/10 shadow-2xl relative overflow-hidden">
         {/* Subtle red ambient background */}
-        <div className="absolute top-0 right-0 w-80 h-80 bg-[#FF002F]/5 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 size-80 bg-primary/5 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10 text-center sm:text-left">
+        <CardContent className="p-6 sm:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 relative z-10 text-center sm:text-left">
           {/* Avatar */}
-          <div className="relative group">
-            {user.profile?.avatarUrl ? (
-              <img
-                src={user.profile.avatarUrl}
-                alt={user.username}
-                className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl object-cover border-2 border-[#FF002F]/30 shadow-glow-red"
-              />
-            ) : (
-              <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-3xl bg-[#22090c] text-[#FF002F] flex items-center justify-center font-black text-3xl border-2 border-[#FF002F]/30 shadow-glow-red">
-                {user.username.charAt(0).toUpperCase()}
-              </div>
+          <Avatar className="size-24 sm:size-28 rounded-3xl border-2 border-primary/30 shadow-glow-red">
+            {user.profile?.avatarUrl && (
+              <AvatarImage src={user.profile.avatarUrl} alt={user.username} className="rounded-3xl" />
             )}
-          </div>
+            <AvatarFallback className="text-3xl font-black rounded-3xl bg-secondary text-primary">
+              {user.username.charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
 
           {/* User Details */}
           <div className="space-y-2 flex-grow">
@@ -73,17 +77,17 @@ export const ProfilePage: React.FC = () => {
               <h1 className="text-2xl sm:text-3xl font-black text-white">
                 {user.username}
               </h1>
-              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-xs font-bold uppercase tracking-wider bg-[#FF002F]/20 text-[#FF002F] border border-[#FF002F]/30 w-fit mx-auto sm:mx-0">
-                <Shield className="w-3 h-3" /> {user.role}
-              </span>
+              <Badge variant="type" className="w-fit mx-auto sm:mx-0 flex items-center gap-1">
+                <Shield className="size-3" /> {user.role}
+              </Badge>
             </div>
 
-            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs text-gray-400 pt-1">
+            <div className="flex flex-wrap items-center justify-center sm:justify-start gap-4 text-xs text-muted-foreground pt-1">
               <span className="flex items-center gap-1.5">
-                <Mail className="w-3.5 h-3.5 text-[#FF002F]" /> {user.email}
+                <Mail className="size-3.5 text-primary" /> {user.email}
               </span>
               <span className="flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-[#FF002F]" /> В клубе с {new Date(user.createdAt).toLocaleDateString('ru-RU')}
+                <Calendar className="size-3.5 text-primary" /> В клубе с {new Date(user.createdAt).toLocaleDateString('ru-RU')}
               </span>
             </div>
 
@@ -102,38 +106,38 @@ export const ProfilePage: React.FC = () => {
                   setBio(user.profile?.bio || '');
                   setIsEditModalOpen(true);
                 }}
-                leftIcon={<Edit3 className="w-4 h-4" />}
+                leftIcon={<Edit3 className="size-4" />}
               >
                 Редактировать профиль
               </Button>
 
               <Button
-                variant="danger"
+                variant="destructive"
                 size="sm"
                 onClick={handleLogout}
-                leftIcon={<LogOut className="w-4 h-4" />}
+                leftIcon={<LogOut className="size-4" />}
               >
                 Выйти
               </Button>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* Quick Navigation Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Link
           to="/bookmarks"
-          className="p-6 rounded-3xl bg-[#000000] border border-white/5 hover:border-[#FF002F]/40 hover:shadow-glow-red transition-all flex items-center gap-4 group"
+          className="p-6 rounded-3xl bg-card border border-white/5 hover:border-primary/40 hover:shadow-glow-red transition-all flex items-center gap-4 group"
         >
-          <div className="w-12 h-12 rounded-2xl bg-[#FF002F]/15 text-[#FF002F] flex items-center justify-center group-hover:scale-110 transition-transform">
-            <Bookmark className="w-6 h-6 fill-current" />
+          <div className="size-12 rounded-2xl bg-primary/15 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Bookmark className="size-6 fill-current" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white group-hover:text-[#FF002F] transition-colors">
+            <h3 className="text-base font-bold text-white group-hover:text-primary transition-colors">
               Мои закладки
             </h3>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted-foreground">
               Смотрите фильмы и серии из сохраненных категорий
             </p>
           </div>
@@ -141,64 +145,65 @@ export const ProfilePage: React.FC = () => {
 
         <Link
           to="/history"
-          className="p-6 rounded-3xl bg-[#000000] border border-white/5 hover:border-[#FF002F]/40 hover:shadow-glow-red transition-all flex items-center gap-4 group"
+          className="p-6 rounded-3xl bg-card border border-white/5 hover:border-primary/40 hover:shadow-glow-red transition-all flex items-center gap-4 group"
         >
-          <div className="w-12 h-12 rounded-2xl bg-[#FF002F]/15 text-[#FF002F] flex items-center justify-center group-hover:scale-110 transition-transform">
-            <Clock className="w-6 h-6" />
+          <div className="size-12 rounded-2xl bg-primary/15 text-primary flex items-center justify-center group-hover:scale-110 transition-transform">
+            <Clock className="size-6" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white group-hover:text-[#FF002F] transition-colors">
+            <h3 className="text-base font-bold text-white group-hover:text-primary transition-colors">
               История просмотров
             </h3>
-            <p className="text-xs text-gray-400">
+            <p className="text-xs text-muted-foreground">
               Возобновляйте просмотр с сохранённой секунды
             </p>
           </div>
         </Link>
       </div>
 
-      {/* Edit Profile Modal */}
-      <Modal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        title="Настройки профиля"
-      >
-        <form onSubmit={handleSaveProfile} className="space-y-4">
-          <Input
-            label="URL аватара"
-            type="url"
-            placeholder="https://images.unsplash.com/..."
-            value={avatarUrl}
-            onChange={(e) => setAvatarUrl(e.target.value)}
-            leftIcon={<UserIcon className="w-4 h-4" />}
-          />
-
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-medium text-gray-300">О себе (Bio)</label>
-            <textarea
-              rows={3}
-              placeholder="Расскажите о любимых жанрах или фильмах..."
-              value={bio}
-              onChange={(e) => setBio(e.target.value)}
-              className="w-full bg-[#000000] text-white text-sm rounded-xl p-3 border border-white/10 focus:border-[#FF002F] focus:outline-none placeholder:text-gray-500 resize-none"
+      {/* Edit Profile Dialog */}
+      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Настройки профиля</DialogTitle>
+          </DialogHeader>
+          <form onSubmit={handleSaveProfile} className="space-y-4 pt-2">
+            <Input
+              label="URL аватара"
+              type="url"
+              placeholder="https://images.unsplash.com/..."
+              value={avatarUrl}
+              onChange={(e) => setAvatarUrl(e.target.value)}
+              leftIcon={<UserIcon className="size-4" />}
             />
-          </div>
 
-          <div className="flex justify-end gap-2 pt-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              type="button"
-              onClick={() => setIsEditModalOpen(false)}
-            >
-              Отмена
-            </Button>
-            <Button size="sm" type="submit" isLoading={isSaving}>
-              Сохранить изменения
-            </Button>
-          </div>
-        </form>
-      </Modal>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-medium text-gray-300">О себе (Bio)</label>
+              <Textarea
+                rows={3}
+                placeholder="Расскажите о любимых жанрах или фильмах..."
+                value={bio}
+                onChange={(e) => setBio(e.target.value)}
+                className="resize-none"
+              />
+            </div>
+
+            <div className="flex justify-end gap-2 pt-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+              >
+                Отмена
+              </Button>
+              <Button size="sm" type="submit" isLoading={isSaving}>
+                Сохранить изменения
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

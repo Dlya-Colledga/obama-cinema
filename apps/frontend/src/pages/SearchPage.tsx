@@ -4,7 +4,8 @@ import { Search, X } from 'lucide-react';
 import { api, animeApi } from '../api/client';
 import { ContentItem } from '../types';
 import { ContentCard } from '../features/catalog/components/ContentCard';
-import { Skeleton } from '../components/ui/Skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 
 export const SearchPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -85,27 +86,29 @@ export const SearchPage: React.FC = () => {
         </h1>
 
         <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 size-5 text-muted-foreground pointer-events-none" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Введите название фильма, сериала или аниме..."
             autoFocus
-            className="w-full bg-[#000000] text-white text-base rounded-2xl pl-12 pr-12 py-4 border border-white/10 focus:border-[#FF002F] focus:ring-2 focus:ring-[#FF002F]/30 focus:outline-none placeholder:text-gray-500 shadow-xl transition-all"
+            className="w-full bg-background text-white text-base rounded-2xl pl-12 pr-12 py-4 border border-white/10 focus:border-primary focus:ring-2 focus:ring-primary/30 focus:outline-none placeholder:text-muted-foreground shadow-xl transition-all"
           />
           {query && (
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={() => setQuery('')}
-              className="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
+              className="absolute right-3 top-1/2 -translate-y-1/2 size-8 text-muted-foreground hover:text-white"
             >
-              <X className="w-4 h-4" />
-            </button>
+              <X className="size-4" />
+            </Button>
           )}
         </div>
 
         {query && (
-          <p className="text-center text-xs text-gray-400">
+          <p className="text-center text-xs text-muted-foreground">
             {isLoading ? 'Идёт поиск...' : `Найдено результатов: ${items.length}`}
           </p>
         )}
@@ -125,9 +128,9 @@ export const SearchPage: React.FC = () => {
           ))}
         </div>
       ) : query.trim() ? (
-        <div className="text-center py-20 bg-[#000000] rounded-3xl border border-white/5">
+        <div className="text-center py-20 bg-card rounded-3xl border border-white/5">
           <p className="text-sm font-semibold text-gray-300">Ничего не найдено по запросу «{query}»</p>
-          <p className="text-xs text-gray-500 mt-1">Попробуйте проверить опечатки или введите другое название.</p>
+          <p className="text-xs text-muted-foreground mt-1">Попробуйте проверить опечатки или введите другое название.</p>
         </div>
       ) : null}
     </div>
