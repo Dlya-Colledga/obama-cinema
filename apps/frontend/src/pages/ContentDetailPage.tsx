@@ -1,15 +1,14 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Play, Calendar, Clock, Globe, Film, Layers, Volume2, VolumeX } from 'lucide-react';
+import { Play, Calendar, Clock, Globe, Film, Layers } from 'lucide-react';
 import { api } from '../api/client';
 import { ContentItem, Season } from '../types';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
 import { RatingWidget } from '../features/ratings/RatingWidget';
-import { BookmarkButton } from '../features/bookmarks/BookmarkButton';
 import { CommentSection } from '../features/comments/CommentSection';
+import { NetflixTrailerHero } from '../features/player/NetflixTrailerHero';
 
 export const ContentDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -18,16 +17,10 @@ export const ContentDetailPage: React.FC = () => {
   const [selectedSeasonNumber, setSelectedSeasonNumber] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Netflix-style trailer background video states
-  const [isMuted, setIsMuted] = useState(true);
-  const [videoFailed, setVideoFailed] = useState(false);
-  const iframeRef = useRef<HTMLIFrameElement>(null);
-
   useEffect(() => {
     const loadContent = async () => {
       if (!slug) return;
       setIsLoading(true);
-      setVideoFailed(false);
       try {
         const res = await api.get<ContentItem>(`/content/${slug}`);
         setContent(res.data);
@@ -49,21 +42,6 @@ export const ContentDetailPage: React.FC = () => {
 
     loadContent();
   }, [slug]);
-
-  const toggleSound = () => {
-    const nextMuted = !isMuted;
-    setIsMuted(nextMuted);
-    if (iframeRef.current?.contentWindow) {
-      iframeRef.current.contentWindow.postMessage(
-        JSON.stringify({
-          event: 'command',
-          func: nextMuted ? 'mute' : 'unMute',
-          args: '',
-        }),
-        '*'
-      );
-    }
-  };
 
   if (isLoading) {
     return (
@@ -93,201 +71,13 @@ export const ContentDetailPage: React.FC = () => {
     );
   }
 
-  const hasTrailer = Boolean(content.trailerYoutubeId) && !videoFailed;
   const activeSeason = seasons.find((s) => s.seasonNumber === selectedSeasonNumber);
 
   return (
     <div className="pb-20 space-y-10">
       {/* Netflix-style Title Card Container */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
-        <div className="relative w-full rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-black min-h-[480px] md:min-h-[560px] lg:min-h-[620px] flex items-end sm:items-center">
-          {hasTrailer ? (
-            <>
-              {/* Background Video Trailer (YouTube embed with autoplay loop) */}
-              <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
-                <iframe
-                  ref={iframeRef}
-                  src={`https://www.youtube-nocookie.com/embed/${content.trailerYoutubeId}?autoplay=1&mute=${isMuted ? 1 : 0}&loop=1&playlist=${content.trailerYoutubeId}&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1&enablejsapi=1`}
-                  title={content.title}
-                  className="w-[170%] h-[170%] -left-[35%] -top-[35%] absolute object-cover border-0"
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  onError={() => setVideoFailed(true)}
-                />
-                {/* Vignettes and cinematic gradients */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 sm:via-black/60 to-transparent" />
-                <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent" />
-              </div>
-
-              {/* Sound & Age Rating Controls */}
-              <div className="absolute top-4 right-4 sm:top-auto sm:bottom-6 sm:right-6 z-20 flex items-center gap-2.5">
-                <button
-                  type="button"
-                  onClick={toggleSound}
-                  aria-label={isMuted ? 'Включить звук' : 'Выключить звук'}
-                  className="size-10 sm:size-11 rounded-full bg-black/70 hover:bg-black/90 border border-white/20 text-white flex items-center justify-center backdrop-blur-md transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
-                >
-                  {isMuted ? <VolumeX className="size-4 sm:size-5" /> : <Volume2 className="size-4 sm:size-5" />}
-                </button>
-                <div className="px-2.5 sm:px-3 py-1 rounded-md border-l-2 border-white/40 bg-black/70 backdrop-blur-md text-xs font-semibold text-white/90">
-                  {content.ageRating}
-                </div>
-              </div>
-
-              {/* Left-aligned Title, Poster & Actions */}
-              <div className="relative z-10 w-full max-w-4xl p-6 sm:p-10 md:p-12 flex flex-col sm:flex-row items-center sm:items-end gap-6 sm:gap-8">
-                {/* Cover / Poster Thumbnail */}
-                <div className="w-32 sm:w-40 md:w-48 aspect-[2/3] rounded-2xl overflow-hidden bg-background border border-white/20 shadow-2xl shrink-0 group relative">
-                  <img
-                    src={content.posterUrl}
-                    alt={content.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute top-2 left-2 flex gap-1">
-                    <Badge variant="type">{content.contentType.name}</Badge>
-                  </div>
-                </div>
-
-                {/* Title & Metadata */}
-                <div className="space-y-4 text-center sm:text-left flex-1 min-w-0">
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-                    <Badge variant="age">{content.ageRating}</Badge>
-                    <span className="text-xs font-bold text-gray-300 px-2 py-0.5 rounded-full bg-white/10 border border-white/5">
-                      {content.releaseYear}
-                    </span>
-                    {content.durationMinutes && (
-                      <span className="text-xs text-gray-400 flex items-center gap-1">
-                        <Clock className="size-3 text-primary" /> {content.durationMinutes} мин
-                      </span>
-                    )}
-                    <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20">
-                      ★ {content.ratingCache.toFixed(1)}
-                    </span>
-                  </div>
-
-                  <div>
-                    <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight drop-shadow-md">
-                      {content.title}
-                    </h1>
-                    {content.originalTitle && (
-                      <p className="text-sm sm:text-base text-gray-400 mt-1 font-medium truncate">
-                        {content.originalTitle}
-                      </p>
-                    )}
-                  </div>
-
-                  {content.genres.length > 0 && (
-                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 pt-1">
-                      {content.genres.slice(0, 4).map((g) => (
-                        <span
-                          key={g.slug}
-                          className="text-xs text-gray-300 bg-black/60 px-2.5 py-0.5 rounded-lg border border-white/10 backdrop-blur-sm"
-                        >
-                          {g.name}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2">
-                    <Link to={`/watch/${content.slug}`}>
-                      <Button size="lg" leftIcon={<Play className="size-5 fill-current" />}>
-                        Смотреть онлайн
-                      </Button>
-                    </Link>
-                    <BookmarkButton
-                      contentId={content.id}
-                      initialBookmark={content.userBookmark}
-                    />
-                  </div>
-                </div>
-              </div>
-            </>
-          ) : (
-            <>
-              {/* Fallback when no trailer: stretched blurred backdrop with centered title card */}
-              <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
-                <img
-                  src={content.bannerUrl || content.posterUrl}
-                  alt=""
-                  className="w-full h-full object-cover scale-125 filter blur-3xl opacity-35"
-                />
-                <div className="absolute inset-0 bg-radial from-transparent via-black/75 to-black" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
-              </div>
-
-              {/* Title & info centered proudly in the middle ("нагло встает по середине") */}
-              <div className="relative z-10 w-full max-w-2xl mx-auto p-8 sm:p-12 flex flex-col items-center justify-center text-center space-y-5 my-auto">
-                {/* Centered Poster card */}
-                <div className="w-36 sm:w-44 aspect-[2/3] rounded-2xl overflow-hidden bg-background border border-white/20 shadow-2xl shadow-primary/10 relative group">
-                  <img
-                    src={content.posterUrl}
-                    alt={content.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute top-2 left-2 flex gap-1">
-                    <Badge variant="type">{content.contentType.name}</Badge>
-                  </div>
-                </div>
-
-                {/* Badges */}
-                <div className="flex flex-wrap items-center justify-center gap-2">
-                  <Badge variant="age">{content.ageRating}</Badge>
-                  <span className="text-xs font-bold text-gray-300 px-2 py-0.5 rounded-full bg-white/10 border border-white/5">
-                    {content.releaseYear}
-                  </span>
-                  {content.durationMinutes && (
-                    <span className="text-xs text-gray-400 flex items-center gap-1">
-                      <Clock className="size-3 text-primary" /> {content.durationMinutes} мин
-                    </span>
-                  )}
-                  <span className="text-xs font-bold text-primary px-2 py-0.5 rounded-full bg-primary/10 border border-primary/20">
-                    ★ {content.ratingCache.toFixed(1)}
-                  </span>
-                </div>
-
-                {/* Title */}
-                <div className="space-y-1">
-                  <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight drop-shadow-md">
-                    {content.title}
-                  </h1>
-                  {content.originalTitle && (
-                    <p className="text-sm sm:text-base text-gray-400 font-medium">
-                      {content.originalTitle}
-                    </p>
-                  )}
-                </div>
-
-                {/* Genres */}
-                {content.genres.length > 0 && (
-                  <div className="flex flex-wrap items-center justify-center gap-1.5">
-                    {content.genres.map((g) => (
-                      <span
-                        key={g.slug}
-                        className="text-xs text-gray-300 bg-white/5 px-2.5 py-0.5 rounded-lg border border-white/10"
-                      >
-                        {g.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Action buttons */}
-                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
-                  <Link to={`/watch/${content.slug}`}>
-                    <Button size="lg" leftIcon={<Play className="size-5 fill-current" />}>
-                      Смотреть онлайн
-                    </Button>
-                  </Link>
-                  <BookmarkButton
-                    contentId={content.id}
-                    initialBookmark={content.userBookmark}
-                  />
-                </div>
-              </div>
-            </>
-          )}
-        </div>
+        <NetflixTrailerHero content={content} />
       </div>
 
       {/* Main Content Details & Metadata Below Hero */}
