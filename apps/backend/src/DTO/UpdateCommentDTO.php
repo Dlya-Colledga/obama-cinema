@@ -15,7 +15,7 @@ final readonly class UpdateCommentDTO
     {
         return new self(
             commentId: $commentId,
-            text: trim((string)($data['text'] ?? ''))
+            text: trim((string)($data['text'] ?? $data['content'] ?? ''))
         );
     }
 }

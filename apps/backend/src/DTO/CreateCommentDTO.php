@@ -16,7 +16,7 @@ final readonly class CreateCommentDTO
     {
         return new self(
             contentId: $contentId,
-            text: trim((string)($data['text'] ?? '')),
+            text: trim((string)($data['text'] ?? $data['content'] ?? '')),
             parentId: !empty($data['parent_id']) ? (int)$data['parent_id'] : null
         );
     }
