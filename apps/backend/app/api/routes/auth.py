@@ -1,4 +1,5 @@
 from typing import Annotated, Any
+
 from fastapi import APIRouter, Depends, Request, status
 
 from app.api.dependencies import (
@@ -24,7 +25,7 @@ async def register(
     dto: RegisterRequest,
     request: Request,
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
-) -> ApiResponse[AuthResponse]:
+) -> ApiResponse[Any]:
     ip = request.client.host if request.client else None
     user_agent = request.headers.get("user-agent")
     result = await auth_service.register(dto, ip_address=ip, user_agent=user_agent)
@@ -36,7 +37,7 @@ async def login(
     dto: LoginRequest,
     request: Request,
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
-) -> ApiResponse[AuthResponse]:
+) -> ApiResponse[Any]:
     ip = request.client.host if request.client else None
     user_agent = request.headers.get("user-agent")
     result = await auth_service.login(dto, ip_address=ip, user_agent=user_agent)
@@ -48,7 +49,7 @@ async def logout(
     token: Annotated[str | None, Depends(extract_bearer_token)],
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
     current_user: Annotated[User, Depends(get_current_user)],
-) -> ApiResponse[dict[str, str]]:
+) -> ApiResponse[Any]:
     if token:
         await auth_service.logout(token)
     return ApiResponse(success=True, data={"message": "Успешный выход"})
@@ -58,6 +59,6 @@ async def logout(
 async def get_me(
     current_user: Annotated[User, Depends(get_current_user)],
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
-) -> ApiResponse[UserResponse]:
+) -> ApiResponse[Any]:
     result = await auth_service.get_me(current_user)
     return ApiResponse(success=True, data=result)

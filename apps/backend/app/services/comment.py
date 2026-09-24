@@ -20,9 +20,7 @@ class CommentService:
         self.comment_repo = comment_repo
         self.content_repo = content_repo
 
-    async def get_comments(
-        self, content_id: int, page: int = 1, limit: int = 20
-    ) -> dict[str, Any]:
+    async def get_comments(self, content_id: int, page: int = 1, limit: int = 20) -> dict[str, Any]:
         return await self.comment_repo.find_by_content(content_id, page, limit)
 
     async def create_comment(

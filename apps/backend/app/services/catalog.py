@@ -1,5 +1,6 @@
 import re
 from typing import Any
+
 from app.exceptions import NotFoundException
 from app.providers.manager import ProviderManager
 from app.repositories.content import ContentRepository
@@ -23,9 +24,7 @@ class CatalogService:
     ) -> dict[str, Any]:
         return await self.content_repo.find_filtered(filter_params, user_id)
 
-    async def get_featured(
-        self, user_id: int | None = None
-    ) -> list[dict[str, Any]]:
+    async def get_featured(self, user_id: int | None = None) -> list[dict[str, Any]]:
         return await self.content_repo.find_featured(user_id)
 
     async def get_content(
@@ -50,11 +49,7 @@ class CatalogService:
             try:
                 anime = await self.anime_service.get_release(anime_id)
                 screenshots = anime.get("screenshots") or []
-                banner_url = (
-                    screenshots[0]
-                    if screenshots
-                    else (anime.get("posterUrl") or None)
-                )
+                banner_url = screenshots[0] if screenshots else (anime.get("posterUrl") or None)
 
                 genres = [
                     {"id": idx + 1, "slug": g, "name": g}

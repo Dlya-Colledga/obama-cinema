@@ -1,4 +1,5 @@
 from pydantic import computed_field, model_validator
+
 from app.schemas.common import CamelModel
 
 
@@ -19,7 +20,7 @@ class CommentSchema(CamelModel):
     updated_at: str
     user: CommentUserSchema
 
-    @computed_field
+    @computed_field  # type: ignore[prop-decorator]
     @property
     def content(self) -> str:
         # Compatibility property if accessed as content

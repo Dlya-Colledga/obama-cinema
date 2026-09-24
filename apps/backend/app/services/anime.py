@@ -1,31 +1,33 @@
 import logging
 import re
 from typing import Any
+
 from app.exceptions import NotFoundException
-from app.providers.anixart.client import AnixartClient
-from app.providers.anixart.parsers.resolver import StreamResolver
+from app.providers.kodik.client import KodikClient
+from app.providers.shikimori.client import ShikimoriClient
 
 logger = logging.getLogger(__name__)
 
 
 class AnimeService:
-    POSTER_BASE = "https://s.anixmirai.com/posters/"
-    SCREENSHOT_BASE = "https://s.anixmirai.com/screenshots/"
+    """
+    Anime service powered by Shikimori for metadata and Kodik for streaming.
+    Preserves full frontend API compatibility.
+    """
 
-    def __init__(
-        self, client: AnixartClient, stream_resolver: StreamResolver
-    ) -> None:
-        self.client = client
-        self.stream_resolver = stream_resolver
+    def __init__(self, shikimori: ShikimoriClient, kodik: KodikClient) -> None:
+        self.shikimori = shikimori
+        self.kodik = kodik
 
     async def search(self, query: str, page: int = 0) -> dict[str, Any]:
         trimmed = query.strip()
         if not trimmed:
             return await self.get_popular(page)
 
-        res = await self.client.search_releases(trimmed, page)
-        releases = res.get("releases", [])
-        normalized = [self.normalize_release(r) for r in releases]
+        # Shikimori uses 1-based pagination
+        shiki_page = max(1, page + 1)
+        results = await self.shikimori.search(trimmed, page=shiki_page, limit=24)
+        normalized = [self.normalize_release(r) for r in results]
 
         return {
             "data": normalized,
@@ -37,126 +39,118 @@ class AnimeService:
         }
 
     async def get_popular(self, page: int = 0) -> dict[str, Any]:
-        res = await self.client.get_filter_releases({}, page)
-        content = res.get("content", [])
-        normalized = [self.normalize_release(r) for r in content]
+        shiki_page = max(1, page + 1)
+        results = await self.shikimori.get_popular(page=shiki_page, limit=24)
+        normalized = [self.normalize_release(r) for r in results]
 
         return {
             "data": normalized,
             "meta": {
                 "page": page,
                 "perPage": len(normalized),
-                "total": res.get("total_elements", len(normalized)),
+                "total": len(normalized),
             },
         }
 
     async def get_release(self, release_id: int) -> dict[str, Any]:
-        release = await self.client.get_release(release_id, extended=True)
-        if release is None:
+        detail = await self.shikimori.get_detail(release_id)
+        if detail is None:
             raise NotFoundException(f"Аниме с ID {release_id} не найдено")
 
-        normalized = self.normalize_release(release, extended=True)
-        trailer_yt_id = await self.get_trailer_youtube_id(release_id)
+        screenshots_raw = await self.shikimori.get_screenshots(release_id)
+        screenshots = [
+            self.shikimori.format_media_url(s.get("original") or s.get("preview"))
+            for s in screenshots_raw
+            if isinstance(s, dict)
+        ]
+        detail["screenshots"] = [s for s in screenshots if s]
+
+        normalized = self.normalize_release(detail, extended=True)
+
+        # Strict YouTube trailer extraction
+        trailer_yt_id, trailer_url = await self.get_trailer(release_id)
         normalized["trailerYoutubeId"] = trailer_yt_id
-        normalized["trailerUrl"] = (
-            f"https://www.youtube.com/watch?v={trailer_yt_id}"
-            if trailer_yt_id
-            else None
-        )
+        normalized["trailerUrl"] = trailer_url
+
         return normalized
 
-    async def get_trailer_youtube_id(self, release_id: int) -> str | None:
+    async def get_trailer(self, release_id: int) -> tuple[str | None, str | None]:
+        """
+        Extract trailer strictly from YouTube.
+        Excludes openings, endings, clips, and non-YouTube hosts.
+        """
         try:
-            video_data = await self.client.get_release_videos(release_id)
-            if not video_data or not isinstance(video_data, dict):
-                return None
-
-            videos = []
-            blocks = video_data.get("blocks")
-            if isinstance(blocks, list):
-                for b in blocks:
-                    if isinstance(b, dict) and isinstance(b.get("videos"), list):
-                        videos.extend(b["videos"])
-
-            last_videos = video_data.get("last_videos")
-            if isinstance(last_videos, list):
-                videos.extend(last_videos)
-
-            for video in videos:
-                if not isinstance(video, dict):
-                    continue
-
-                cat = video.get("category") or {}
-                cat_id = int(cat.get("id") or 0)
-                cat_name = str(cat.get("name") or "").lower()
-                title = str(video.get("title") or "").lower()
-
-                # Exclude openings, endings, clips, etc.
-                excluded = [
-                    "опенинг",
-                    "эндинг",
-                    "клип",
-                    "opening",
-                    "ending",
-                    "op",
-                    "ed",
-                ]
-                if any(x in cat_name for x in ["опенинг", "эндинг", "клип", "opening", "ending"]):
-                    continue
-                if any(x in title for x in ["опенинг", "эндинг", "клип", "opening", "ending", "op", "ed"]):
-                    continue
-
-                # Strict trailer check
-                is_trailer = (
-                    cat_id == 1
-                    or any(x in cat_name for x in ["трейлер", "тизер", "trailer", "pv"])
-                    or any(x in title for x in ["трейлер", "тизер", "trailer", "pv"])
-                )
-                if not is_trailer:
-                    continue
-
-                hosting = video.get("hosting") or {}
-                hosting_id = int(hosting.get("id") or 0)
-                hosting_name = str(hosting.get("name") or "").lower()
-                url = str(video.get("url") or video.get("player_url") or "")
-
-                is_youtube = (
-                    hosting_id == 2
-                    or "youtube" in hosting_name
-                    or "youtu" in url
-                )
-                if not is_youtube:
-                    continue
-
-                yt_id = self.extract_youtube_id(url)
-                if yt_id:
-                    return yt_id
+            videos = await self.shikimori.get_videos(release_id)
+            return self.shikimori.extract_strict_youtube_trailer(videos)
         except Exception as e:
-            logger.warning(f"Failed to get trailer for anime {release_id}: {e}")
+            logger.warning(f"Failed to fetch videos for anime {release_id}: {e}")
+            return None, None
 
-        return None
-
-    @staticmethod
-    def extract_youtube_id(url: str) -> str | None:
-        pattern = r"(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([A-Za-z0-9_-]{11})"
-        m = re.search(pattern, url, re.I)
-        return m.group(1) if m else None
+    async def get_trailer_youtube_id(self, release_id: int) -> str | None:
+        yt_id, _ = await self.get_trailer(release_id)
+        return yt_id
 
     async def get_dubbers(self, release_id: int) -> list[dict[str, Any]]:
-        raw_dubbers = await self.client.get_dubbers(release_id)
-        return [
-            {
-                "id": int(d.get("id") or 0),
-                "name": str(d.get("name") or "Неизвестно"),
-                "icon": d.get("icon"),
-                "workers": d.get("workers"),
-                "isSub": bool(d.get("is_sub")),
-                "episodesCount": int(d.get("episodes_count") or 0),
-                "viewCount": int(d.get("view_count") or 0),
-            }
-            for d in raw_dubbers
-            if isinstance(d, dict)
-        ]
+        # Fetch translations from Kodik by Shikimori ID
+        translations = await self.kodik.get_translations(str(release_id), id_type="shikimori")
+
+        if not translations:
+            # Fallback search on Kodik by title if ID wasn't linked
+            detail = await self.shikimori.get_detail(release_id)
+            if detail:
+                search_title = detail.get("russian") or detail.get("name")
+                if search_title:
+                    k_search = await self.kodik.search(search_title, limit=3, only_anime=True)
+                    for item in k_search:
+                        k_id = item.get("shikimori_id") or item.get("kinopoisk_id")
+                        k_type = "shikimori" if item.get("shikimori_id") else "kinopoisk"
+                        if k_id:
+                            translations = await self.kodik.get_translations(
+                                str(k_id), id_type=k_type
+                            )
+                            if translations:
+                                break
+
+        dubbers = []
+        for idx, t in enumerate(translations):
+            t_id = int(t["id"]) if str(t.get("id", "")).isdigit() else idx + 1
+            t_name = str(t.get("name") or "Озвучка")
+            t_type = str(t.get("type") or "").lower()
+            is_sub = "суб" in t_type or "sub" in t_type
+
+            # Series range tuple (min, max)
+            series_range = t.get("series_range")
+            ep_count = 0
+            if isinstance(series_range, (list, tuple)) and len(series_range) > 1:
+                ep_count = int(series_range[1])
+
+            dubbers.append(
+                {
+                    "id": t_id,
+                    "name": t_name,
+                    "icon": None,
+                    "workers": None,
+                    "isSub": is_sub,
+                    "episodesCount": ep_count,
+                    "viewCount": 0,
+                }
+            )
+
+        # Fallback default dubber if Kodik returned empty translations
+        if not dubbers:
+            dubbers.append(
+                {
+                    "id": 1,
+                    "name": "Kodik Player",
+                    "icon": None,
+                    "workers": None,
+                    "isSub": False,
+                    "episodesCount": 1,
+                    "viewCount": 0,
+                }
+            )
+
+        return dubbers
 
     async def get_episodes(
         self,
@@ -165,14 +159,6 @@ class AnimeService:
         source_id: int | None = None,
     ) -> dict[str, Any]:
         dubbers = await self.get_dubbers(release_id)
-        if not dubbers:
-            return {
-                "selectedDubber": None,
-                "selectedSource": None,
-                "dubbers": [],
-                "sources": [],
-                "episodes": [],
-            }
 
         selected_dubber = None
         if dubber_id is not None:
@@ -180,47 +166,45 @@ class AnimeService:
                 if d["id"] == dubber_id:
                     selected_dubber = d
                     break
-        if selected_dubber is None:
+        if selected_dubber is None and dubbers:
             selected_dubber = dubbers[0]
 
-        active_dubber_id = int(selected_dubber["id"])
-        raw_sources = await self.client.get_sources(release_id, active_dubber_id)
+        # Determine total episodes
+        total_episodes = 0
+        if selected_dubber and selected_dubber["episodesCount"] > 0:
+            total_episodes = selected_dubber["episodesCount"]
+        else:
+            # Check Kodik series count
+            total_episodes = await self.kodik.get_series_count(str(release_id), id_type="shikimori")
+
+        if total_episodes <= 0:
+            # Fallback to Shikimori detail
+            detail = await self.shikimori.get_detail(release_id)
+            if detail:
+                total_episodes = int(detail.get("episodes") or detail.get("episodes_aired") or 1)
+            else:
+                total_episodes = 1
+
         sources = [
             {
-                "id": int(s.get("id") or 0),
-                "name": str(s.get("name") or "Плеер"),
-                "episodesCount": int(s.get("episodes_count") or 0),
-                "quality": int(s.get("quality") or 0),
+                "id": 1,
+                "name": "Kodik",
+                "episodesCount": total_episodes,
+                "quality": 720,
             }
-            for s in raw_sources
-            if isinstance(s, dict)
         ]
+        selected_source = sources[0]
 
-        selected_source = None
-        if source_id is not None:
-            for s in sources:
-                if s["id"] == source_id:
-                    selected_source = s
-                    break
-        if selected_source is None and sources:
-            selected_source = sources[0]
-
-        episodes = []
-        if selected_source is not None:
-            raw_episodes = await self.client.get_episodes(
-                release_id, active_dubber_id, int(selected_source["id"])
-            )
-            episodes = [
-                {
-                    "position": int(ep.get("position") or 1),
-                    "name": str(ep.get("name") or f"Серия {ep.get('position', 1)}"),
-                    "url": str(ep.get("url") or ""),
-                    "iframe": bool(ep.get("iframe")),
-                    "isFiller": bool(ep.get("is_filler")),
-                }
-                for ep in raw_episodes
-                if isinstance(ep, dict)
-            ]
+        episodes = [
+            {
+                "position": i,
+                "name": f"Серия {i}",
+                "url": f"kodik:{release_id}:{i}",
+                "iframe": False,
+                "isFiller": False,
+            }
+            for i in range(1, total_episodes + 1)
+        ]
 
         return {
             "selectedDubber": selected_dubber,
@@ -237,104 +221,152 @@ class AnimeService:
         dubber_id: int | None = None,
         source_id: int | None = None,
     ) -> list[dict[str, Any]]:
-        episodes_data = await self.get_episodes(release_id, dubber_id, source_id)
-        episodes = episodes_data.get("episodes", [])
-        target_episode = None
+        streams: list[dict[str, Any]] = []
+        trans_id = str(dubber_id) if dubber_id is not None else "0"
 
-        for ep in episodes:
-            if ep["position"] == position:
-                target_episode = ep
-                break
-
-        if target_episode is None and episodes:
-            idx = position - 1 if 0 <= position - 1 < len(episodes) else 0
-            target_episode = episodes[idx]
-
-        if not target_episode or not target_episode.get("url"):
-            return []
-
-        sel_source = episodes_data.get("selectedSource") or {}
-        sel_dubber = episodes_data.get("selectedDubber") or {}
-        source_name = sel_source.get("name") or "Anixart"
-        dubber_name = sel_dubber.get("name") or "Озвучка"
-
-        return await self.stream_resolver.resolve(
-            target_episode["url"], source_name, dubber_name
+        # 1. Fetch direct MP4 stream
+        direct_url, quality, _ = await self.kodik.get_stream_link(
+            external_id=str(release_id),
+            id_type="shikimori",
+            episode_num=position,
+            translation_id=trans_id,
+            is_movie=False,
         )
 
-    def normalize_release(
-        self, r: dict[str, Any], extended: bool = False
-    ) -> dict[str, Any]:
+        if direct_url:
+            streams.append(
+                {
+                    "id": release_id * 1000 + (dubber_id or 1),
+                    "provider": "Kodik Direct",
+                    "providerCode": "kodik",
+                    "streamUrl": direct_url,
+                    "playerType": "mp4",
+                    "quality": f"{quality}p",
+                    "translationTitle": "Прямой поток (MP4)",
+                }
+            )
+
+        # 2. Fetch embed iframe player
+        embed_url = await self.kodik.get_embed_link(
+            external_id=str(release_id), id_type="shikimori"
+        )
+        if embed_url:
+            streams.append(
+                {
+                    "id": release_id * 1000 + 999,
+                    "provider": "Kodik Player",
+                    "providerCode": "kodik",
+                    "streamUrl": embed_url,
+                    "playerType": "iframe",
+                    "quality": "1080p",
+                    "translationTitle": "Мультиплеер (все озвучки)",
+                }
+            )
+
+        return streams
+
+    def normalize_release(self, r: dict[str, Any], extended: bool = False) -> dict[str, Any]:
         release_id = int(r.get("id") or 0)
-        title_ru = str(r.get("title_ru") or r.get("name_ru") or "").strip()
-        title_orig = str(
-            r.get("title_original") or r.get("name_original") or ""
-        ).strip()
+        title_ru = str(r.get("russian") or r.get("title_ru") or "").strip()
+        title_orig = str(r.get("name") or r.get("title_original") or "").strip()
         title = title_ru if title_ru else (title_orig if title_orig else f"Аниме #{release_id}")
 
-        poster_url = r.get("image")
-        if (not poster_url or not str(poster_url).startswith("http")) and r.get("poster"):
-            poster_url = f"{self.POSTER_BASE}{r['poster']}.jpg"
+        image_obj = r.get("image") or {}
+        poster_path = (
+            image_obj.get("original")
+            or image_obj.get("preview")
+            or r.get("poster_url")
+            or r.get("poster")
+        )
+        poster_url = self.shikimori.format_media_url(poster_path)
 
-        screenshots = []
-        if isinstance(r.get("screenshots"), list):
-            for shot in r["screenshots"]:
-                if isinstance(shot, str):
-                    if shot.startswith("http"):
-                        screenshots.append(shot)
-                    else:
-                        screenshots.append(f"{self.SCREENSHOT_BASE}{shot}.jpg")
+        # Parse year from aired_on e.g. "2013-04-07"
+        year = None
+        aired_on = r.get("aired_on") or r.get("released_on")
+        if aired_on and isinstance(aired_on, str) and len(aired_on) >= 4:
+            year_part = aired_on[:4]
+            if year_part.isdigit():
+                year = int(year_part)
+        elif r.get("year") is not None and str(r["year"]).isdigit():
+            year = int(r["year"])
 
+        # Genres
         genres = []
-        if isinstance(r.get("genres"), str):
-            genres = [
-                g.strip() for g in r["genres"].split(",") if g.strip()
-            ]
+        raw_genres = r.get("genres", [])
+        if isinstance(raw_genres, list):
+            for g in raw_genres:
+                if isinstance(g, dict) and g.get("russian"):
+                    genres.append(str(g["russian"]))
+                elif isinstance(g, str):
+                    genres.append(g.strip())
+        elif isinstance(raw_genres, str):
+            genres = [g.strip() for g in raw_genres.split(",") if g.strip()]
 
-        raw_grade = float(r.get("grade") or 0.0)
-        rating = round(raw_grade * 2, 1) if raw_grade > 0 else 8.0
+        raw_score = float(r.get("score") or r.get("rating") or 8.0)
+        rating = round(raw_score, 1)
+        grade5 = round(rating / 2, 2)
 
-        episodes_rel = int(r.get("episodes_released") or 0)
-        episodes_tot = int(r.get("episodes_total") or episodes_rel)
+        episodes_rel = int(r.get("episodes_aired") or r.get("episodes") or 0)
+        episodes_tot = int(r.get("episodes") or episodes_rel)
 
-        status_name = "Завершён"
-        status_obj = r.get("status")
-        if isinstance(status_obj, dict) and status_obj.get("name"):
-            status_name = str(status_obj["name"])
-        elif r.get("status_id") == 2 or (episodes_rel < episodes_tot and episodes_tot > 0):
+        # Status
+        status_raw = str(r.get("status") or "").lower()
+        if status_raw in ["released", "завершён", "завершено"]:
+            status_name = "Завершён"
+        elif status_raw in ["ongoing", "онгоинг"]:
             status_name = "Онгоинг"
+        elif status_raw in ["anons", "анонс"]:
+            status_name = "Анонс"
+        else:
+            status_name = (
+                "Завершён" if episodes_tot > 0 and episodes_rel >= episodes_tot else "Онгоинг"
+            )
+
+        # Studios
+        studio_name = ""
+        studios = r.get("studios", [])
+        if isinstance(studios, list) and studios:
+            studio_name = str(studios[0].get("name", ""))
+        elif isinstance(r.get("studio"), str):
+            studio_name = r["studio"]
+
+        # Description cleanup (remove [b]...[/b], [i]...[/i], HTML tags)
+        raw_desc = str(r.get("description") or r.get("description_html") or "")
+        clean_desc = re.sub(r"<[^>]+>", "", raw_desc)
+        clean_desc = re.sub(
+            r"\[/?(?:b|i|u|character|anime|url|spoiler)[^\]]*\]", "", clean_desc
+        ).strip()
 
         data: dict[str, Any] = {
             "id": release_id,
             "title": title,
-            "titleRu": title_ru,
-            "titleOriginal": title_orig,
+            "titleRu": title_ru or title,
+            "titleOriginal": title_orig or title,
             "slug": f"anime-{release_id}",
             "type": "anime",
-            "description": str(r.get("description") or ""),
+            "description": clean_desc,
             "posterUrl": poster_url,
-            "year": int(r["year"]) if r.get("year") is not None and str(r["year"]).isdigit() else None,
-            "country": str(r.get("country") or "Япония"),
+            "year": year,
+            "country": "Япония",
             "genres": genres,
             "rating": rating,
-            "grade5": raw_grade,
-            "votesCount": int(r.get("rating") or r.get("vote_count") or 0),
+            "grade5": grade5,
+            "votesCount": int(r.get("votes_count") or 100),
             "episodesTotal": episodes_tot,
             "episodesReleased": episodes_rel,
-            "duration": int(r["duration"]) if r.get("duration") is not None and str(r["duration"]).isdigit() else 24,
-            "season": int(r["season"]) if r.get("season") is not None and str(r["season"]).isdigit() else 1,
-            "studio": str(r.get("studio") or ""),
-            "director": str(r.get("director") or ""),
-            "author": str(r.get("author") or ""),
+            "duration": int(r.get("duration") or 24),
+            "season": 1,
+            "studio": studio_name,
+            "director": "",
+            "author": "",
             "status": status_name,
             "isAnimeApi": True,
         }
 
         if extended:
-            data["screenshots"] = screenshots
-            cat_obj = r.get("category")
-            data["category"] = cat_obj.get("name") if isinstance(cat_obj, dict) else "Сериал"
-            data["ageRating"] = int(r.get("age_rating") or 16)
-            data["source"] = str(r.get("source") or "манга")
+            data["screenshots"] = r.get("screenshots") or []
+            data["category"] = "Сериал" if episodes_tot > 1 else "Фильм"
+            data["ageRating"] = 16
+            data["source"] = "манга"
 
         return data

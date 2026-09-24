@@ -1,4 +1,5 @@
-from typing import Annotated
+from typing import Annotated, Any
+
 from fastapi import APIRouter, Depends, Query
 
 from app.api.dependencies import get_current_user, get_watch_service
@@ -20,7 +21,7 @@ async def save_progress(
     dto: WatchProgressRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     watch_service: Annotated[WatchService, Depends(get_watch_service)],
-) -> ApiResponse[WatchProgressResponse]:
+) -> ApiResponse[Any]:
     result = await watch_service.save_progress(
         user=current_user,
         content_id=dto.content_id,
@@ -42,10 +43,8 @@ async def get_progress(
     watch_service: Annotated[WatchService, Depends(get_watch_service)],
     episode_id: int | None = Query(None, alias="episode_id"),
     episode_id_camel: int | None = Query(None, alias="episodeId"),
-) -> ApiResponse[WatchProgressResponse | None]:
-    effective_episode_id = (
-        episode_id if episode_id is not None else episode_id_camel
-    )
+) -> ApiResponse[Any]:
+    effective_episode_id = episode_id if episode_id is not None else episode_id_camel
     progress = await watch_service.get_progress(
         user=current_user,
         content_id=content_id,
@@ -59,7 +58,7 @@ async def get_unfinished(
     current_user: Annotated[User, Depends(get_current_user)],
     watch_service: Annotated[WatchService, Depends(get_watch_service)],
     limit: int = Query(10, ge=1, le=20),
-) -> ApiResponse[list[UnfinishedWatchItemSchema]]:
+) -> ApiResponse[Any]:
     items = await watch_service.get_recent_unfinished(current_user, limit)
     return ApiResponse(success=True, data=items)
 
@@ -70,7 +69,7 @@ async def get_history(
     watch_service: Annotated[WatchService, Depends(get_watch_service)],
     page: int = Query(1, ge=1),
     limit: int = Query(24, ge=1, le=50),
-) -> ApiResponse[list[WatchHistoryItemSchema]]:
+) -> ApiResponse[Any]:
     result = await watch_service.get_history(current_user, page, limit)
     items = result.get("items", [])
     meta = PaginationMeta(**result.get("meta", {}))
@@ -82,8 +81,6 @@ async def clear_history(
     current_user: Annotated[User, Depends(get_current_user)],
     watch_service: Annotated[WatchService, Depends(get_watch_service)],
     id: int | None = None,
-) -> ApiResponse[dict[str, str]]:
+) -> ApiResponse[Any]:
     await watch_service.clear_history(current_user, id)
-    return ApiResponse(
-        success=True, data={"message": "История просмотров обновлена"}
-    )
+    return ApiResponse(success=True, data={"message": "История просмотров обновлена"})

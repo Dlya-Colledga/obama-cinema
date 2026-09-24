@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
+
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -32,12 +33,8 @@ class WatchProgress(Base):
             postgresql_nulls_not_distinct=True,
             name="watch_progress_user_id_content_id_episode_id_key",
         ),
-        CheckConstraint(
-            "progress_seconds >= 0", name="watch_progress_progress_seconds_check"
-        ),
-        CheckConstraint(
-            "duration_seconds >= 0", name="watch_progress_duration_seconds_check"
-        ),
+        CheckConstraint("progress_seconds >= 0", name="watch_progress_progress_seconds_check"),
+        CheckConstraint("duration_seconds >= 0", name="watch_progress_duration_seconds_check"),
         Index("idx_watch_progress_user", "user_id"),
         Index("idx_watch_progress_content", "content_id"),
         Index("idx_watch_progress_last_watched", "user_id", "last_watched_at"),

@@ -1,4 +1,5 @@
 import time
+
 import pytest
 from httpx import AsyncClient
 
@@ -182,7 +183,11 @@ async def test_comments_and_idor(client: AsyncClient) -> None:
     # Register author
     res1 = await client.post(
         "/auth/register",
-        json={"email": f"cauthor_{ts}@test.com", "username": f"cauth_{ts}", "password": "Password123!"},
+        json={
+            "email": f"cauthor_{ts}@test.com",
+            "username": f"cauth_{ts}",
+            "password": "Password123!",
+        },
     )
     token1 = res1.json()["data"]["token"]
     headers1 = {"Authorization": f"Bearer {token1}"}
@@ -190,7 +195,11 @@ async def test_comments_and_idor(client: AsyncClient) -> None:
     # Register intruder
     res2 = await client.post(
         "/auth/register",
-        json={"email": f"cintruder_{ts}@test.com", "username": f"cintr_{ts}", "password": "Password123!"},
+        json={
+            "email": f"cintruder_{ts}@test.com",
+            "username": f"cintr_{ts}",
+            "password": "Password123!",
+        },
     )
     token2 = res2.json()["data"]["token"]
     headers2 = {"Authorization": f"Bearer {token2}"}
@@ -298,7 +307,11 @@ async def test_watch_progress_and_history(client: AsyncClient) -> None:
     ts = int(time.time() * 1000)
     res = await client.post(
         "/auth/register",
-        json={"email": f"watch_{ts}@test.com", "username": f"watch_{ts}", "password": "Password123!"},
+        json={
+            "email": f"watch_{ts}@test.com",
+            "username": f"watch_{ts}",
+            "password": "Password123!",
+        },
     )
     token = res.json()["data"]["token"]
     headers = {"Authorization": f"Bearer {token}"}
@@ -333,8 +346,8 @@ async def test_watch_progress_and_history(client: AsyncClient) -> None:
 
 
 @pytest.mark.asyncio
-async def test_anime_anixart_api(client: AsyncClient) -> None:
-    # 1. Popular anime
+async def test_anime_shikimori_kodik_api(client: AsyncClient) -> None:
+    # 1. Popular anime via Shikimori
     res = await client.get("/anime/popular")
     assert res.status_code == 200
     pop = res.json()["data"]
@@ -346,7 +359,7 @@ async def test_anime_anixart_api(client: AsyncClient) -> None:
     assert "title" in first
     assert "rating" in first
 
-    # 2. Search anime
+    # 2. Search anime via Shikimori
     res = await client.get("/anime/search", params={"q": "Наруто"})
     assert res.status_code == 200
     search_data = res.json()["data"]["data"]
@@ -356,42 +369,45 @@ async def test_anime_anixart_api(client: AsyncClient) -> None:
     )
     assert has_naruto
 
-    # 3. Single release details (Naruto 609)
-    res = await client.get("/anime/609")
+    # 3. Single release details (Naruto Shikimori ID 20)
+    res = await client.get("/anime/20")
     assert res.status_code == 200
     naruto = res.json()["data"]
-    assert naruto["id"] == 609
+    assert naruto["id"] == 20
     assert naruto["studio"] == "Studio Pierrot"
     assert len(naruto.get("screenshots") or []) > 0
+    assert naruto.get("trailerYoutubeId") is not None
+    assert "youtube.com" in (naruto.get("trailerUrl") or "")
 
-    # 4. Dubbers
-    res = await client.get("/anime/609/dubbers")
+    # 4. Dubbers via Kodik
+    res = await client.get("/anime/20/dubbers")
     assert res.status_code == 200
     dubbers = res.json()["data"]
-    assert any(d.get("name") == "2x2" for d in dubbers)
+    assert len(dubbers) > 0
+    assert any("2x2" in d.get("name", "") for d in dubbers)
 
     # 5. Episodes
-    res = await client.get("/anime/609/episodes")
+    res = await client.get("/anime/20/episodes")
     assert res.status_code == 200
     ep_data = res.json()["data"]
     episodes = ep_data.get("episodes", [])
-    assert len(episodes) == 220
+    assert len(episodes) >= 220
 
-    # 6. Streams
-    res = await client.get("/anime/609/streams", params={"position": 1})
+    # 6. Streams via Kodik
+    res = await client.get("/anime/20/streams", params={"position": 1})
     assert res.status_code == 200
     streams = res.json()["data"]
     assert len(streams) > 0
 
     # 7. Universal content endpoints
-    res = await client.get("/content/anime-609")
+    res = await client.get("/content/anime-20")
     assert res.status_code == 200
-    assert res.json()["data"]["slug"] == "anime-609"
+    assert res.json()["data"]["slug"] == "anime-20"
 
-    res = await client.get("/content/609/seasons")
+    res = await client.get("/content/20/seasons")
     assert res.status_code == 200
     assert len(res.json()["data"]) > 0
 
-    res = await client.get("/content/609/sources", params={"episode_id": 1})
+    res = await client.get("/content/20/sources", params={"episode_id": 1})
     assert res.status_code == 200
     assert len(res.json()["data"]) > 0

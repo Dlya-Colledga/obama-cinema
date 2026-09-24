@@ -1,4 +1,5 @@
-from typing import Annotated
+from typing import Annotated, Any
+
 from fastapi import APIRouter, Depends, Query, status
 
 from app.api.dependencies import get_comment_service, get_current_user
@@ -23,7 +24,7 @@ async def get_comments(
     comment_service: Annotated[CommentService, Depends(get_comment_service)],
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=50),
-) -> ApiResponse[list[CommentSchema]]:
+) -> ApiResponse[Any]:
     result = await comment_service.get_comments(content_id, page, limit)
     items = result.get("items", [])
     meta = PaginationMeta(**result.get("meta", {}))
@@ -40,7 +41,7 @@ async def create_comment(
     dto: CreateCommentRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     comment_service: Annotated[CommentService, Depends(get_comment_service)],
-) -> ApiResponse[CommentSchema]:
+) -> ApiResponse[Any]:
     text_content = dto.text or dto.content or ""
     comment = await comment_service.create_comment(
         user=current_user,
@@ -57,7 +58,7 @@ async def update_comment(
     dto: UpdateCommentRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     comment_service: Annotated[CommentService, Depends(get_comment_service)],
-) -> ApiResponse[CommentSchema]:
+) -> ApiResponse[Any]:
     text_content = dto.text or dto.content or ""
     comment = await comment_service.update_comment(
         user=current_user,
@@ -72,8 +73,6 @@ async def delete_comment(
     comment_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     comment_service: Annotated[CommentService, Depends(get_comment_service)],
-) -> ApiResponse[dict[str, str]]:
+) -> ApiResponse[Any]:
     await comment_service.delete_comment(current_user, comment_id)
-    return ApiResponse(
-        success=True, data={"message": "Комментарий успешно удалён"}
-    )
+    return ApiResponse(success=True, data={"message": "Комментарий успешно удалён"})

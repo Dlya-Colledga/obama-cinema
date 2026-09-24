@@ -33,9 +33,7 @@ class BookmarkService:
             user_id=user.id, category=category, page=page, limit=limit
         )
 
-    async def set_bookmark(
-        self, user: User, content_id: int, category: str
-    ) -> dict[str, Any]:
+    async def set_bookmark(self, user: User, content_id: int, category: str) -> dict[str, Any]:
         if category not in VALID_BOOKMARK_CATEGORIES:
             raise ValidationException(
                 "Ошибка валидации категории закладки",

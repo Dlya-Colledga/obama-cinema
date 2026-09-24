@@ -1,4 +1,5 @@
-from typing import Annotated
+from typing import Annotated, Any
+
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import get_auth_service, get_current_user
@@ -14,7 +15,7 @@ router = APIRouter(prefix="/users", tags=["users"])
 async def get_profile(
     current_user: Annotated[User, Depends(get_current_user)],
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
-) -> ApiResponse[UserResponse]:
+) -> ApiResponse[Any]:
     result = await auth_service.get_me(current_user)
     return ApiResponse(success=True, data=result)
 
@@ -24,6 +25,6 @@ async def update_profile(
     dto: UpdateProfileRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     auth_service: Annotated[AuthService, Depends(get_auth_service)],
-) -> ApiResponse[UserResponse]:
+) -> ApiResponse[Any]:
     result = await auth_service.update_profile(current_user, dto)
     return ApiResponse(success=True, data=result)

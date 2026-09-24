@@ -1,5 +1,6 @@
 import logging
 from typing import Any
+
 from app.providers.base import ContentProvider
 
 logger = logging.getLogger(__name__)

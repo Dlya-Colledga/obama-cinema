@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -12,11 +13,7 @@ class UserRepository:
         self.session = session
 
     async def find_by_id(self, user_id: int) -> User | None:
-        stmt = (
-            select(User)
-            .options(selectinload(User.profile))
-            .where(User.id == user_id)
-        )
+        stmt = select(User).options(selectinload(User.profile)).where(User.id == user_id)
         result = await self.session.execute(stmt)
         return result.scalars().first()
 

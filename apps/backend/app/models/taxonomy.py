@@ -6,14 +6,18 @@ from app.models.base import Base
 content_genres = Table(
     "content_genres",
     Base.metadata,
-    Column("content_id", BigInteger, ForeignKey("contents.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "content_id", BigInteger, ForeignKey("contents.id", ondelete="CASCADE"), primary_key=True
+    ),
     Column("genre_id", Integer, ForeignKey("genres.id", ondelete="CASCADE"), primary_key=True),
 )
 
 content_countries = Table(
     "content_countries",
     Base.metadata,
-    Column("content_id", BigInteger, ForeignKey("contents.id", ondelete="CASCADE"), primary_key=True),
+    Column(
+        "content_id", BigInteger, ForeignKey("contents.id", ondelete="CASCADE"), primary_key=True
+    ),
     Column("country_id", Integer, ForeignKey("countries.id", ondelete="CASCADE"), primary_key=True),
 )
 

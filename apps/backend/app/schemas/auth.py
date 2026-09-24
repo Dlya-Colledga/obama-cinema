@@ -1,5 +1,7 @@
 import re
-from pydantic import EmailStr, field_validator, model_validator
+
+from pydantic import field_validator, model_validator
+
 from app.schemas.common import CamelModel
 from app.schemas.user import UserResponse
 

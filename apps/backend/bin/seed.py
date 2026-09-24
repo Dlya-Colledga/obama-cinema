@@ -1,4 +1,3 @@
-import os
 import sys
 from pathlib import Path
 
@@ -7,9 +6,9 @@ backend_dir = Path(__file__).resolve().parent.parent
 if str(backend_dir) not in sys.path:
     sys.path.insert(0, str(backend_dir))
 
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text  # noqa: E402
 
-from app.core.config import get_settings
+from app.core.config import get_settings  # noqa: E402
 
 
 def run_seeders() -> None:

@@ -1,6 +1,7 @@
-from datetime import datetime, timezone
 import math
+from datetime import datetime, timezone
 from typing import Any
+
 from sqlalchemy import delete, func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -16,9 +17,7 @@ class CommentRepository:
     async def find_by_content(
         self, content_id: int, page: int = 1, limit: int = 20
     ) -> dict[str, Any]:
-        count_stmt = select(func.count(Comment.id)).where(
-            Comment.content_id == content_id
-        )
+        count_stmt = select(func.count(Comment.id)).where(Comment.content_id == content_id)
         count_res = await self.session.execute(count_stmt)
         total = count_res.scalar_one()
 
@@ -94,9 +93,7 @@ class CommentRepository:
 
     def _format_comment(self, comment: Comment) -> dict[str, Any]:
         avatar_url = (
-            comment.user.profile.avatar_url
-            if comment.user and comment.user.profile
-            else None
+            comment.user.profile.avatar_url if comment.user and comment.user.profile else None
         )
         return {
             "id": comment.id,

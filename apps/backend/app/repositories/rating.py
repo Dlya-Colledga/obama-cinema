@@ -1,6 +1,7 @@
 from decimal import Decimal
 from typing import Any
-from sqlalchemy import delete, func, select, text, update
+
+from sqlalchemy import delete, func, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,9 +13,7 @@ class RatingRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    async def upsert(
-        self, user_id: int, content_id: int, rating_value: int
-    ) -> dict[str, Any]:
+    async def upsert(self, user_id: int, content_id: int, rating_value: int) -> dict[str, Any]:
         stmt = (
             insert(Rating)
             .values(user_id=user_id, content_id=content_id, rating=rating_value)
@@ -31,9 +30,7 @@ class RatingRepository:
         return await self.get_content_stats(content_id)
 
     async def delete(self, user_id: int, content_id: int) -> dict[str, Any]:
-        stmt = delete(Rating).where(
-            Rating.user_id == user_id, Rating.content_id == content_id
-        )
+        stmt = delete(Rating).where(Rating.user_id == user_id, Rating.content_id == content_id)
         await self.session.execute(stmt)
         await self.session.flush()
 
@@ -50,9 +47,7 @@ class RatingRepository:
         return int(val) if val is not None else None
 
     async def get_content_stats(self, content_id: int) -> dict[str, Any]:
-        stmt = select(Content.rating_cache, Content.votes_count).where(
-            Content.id == content_id
-        )
+        stmt = select(Content.rating_cache, Content.votes_count).where(Content.id == content_id)
         res = await self.session.execute(stmt)
         row = res.first()
         if not row:

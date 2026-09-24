@@ -1,15 +1,16 @@
 from typing import Annotated
+
 from fastapi import Depends, Header
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.exceptions import AuthenticationException
 from app.models.user import User
-from app.providers.anixart.client import AnixartClient
-from app.providers.anixart.parsers.resolver import StreamResolver
-from app.providers.anixart.provider import AnixartStreamProvider
 from app.providers.demo import DemoStreamProvider
+from app.providers.kodik.client import KodikClient
+from app.providers.kodik.provider import KodikStreamProvider
 from app.providers.manager import ProviderManager
+from app.providers.shikimori.client import ShikimoriClient
 from app.repositories.bookmark import BookmarkRepository
 from app.repositories.comment import CommentRepository
 from app.repositories.content import ContentRepository
@@ -25,9 +26,9 @@ from app.services.rating import RatingService
 from app.services.watch import WatchService
 
 # Reusable shared client instances
-_anixart_client = AnixartClient()
-_stream_resolver = StreamResolver()
-_anime_service = AnimeService(_anixart_client, _stream_resolver)
+_shikimori_client = ShikimoriClient()
+_kodik_client = KodikClient()
+_anime_service = AnimeService(_shikimori_client, _kodik_client)
 
 
 # --- Repositories ---
@@ -68,10 +69,9 @@ def get_anime_service() -> AnimeService:
 
 def get_provider_manager(
     content_repo: ContentRepository = Depends(get_content_repo),
-    anime_service: AnimeService = Depends(get_anime_service),
 ) -> ProviderManager:
     manager = ProviderManager()
-    manager.register_provider(AnixartStreamProvider(content_repo, anime_service))
+    manager.register_provider(KodikStreamProvider(content_repo, _kodik_client))
     manager.register_provider(DemoStreamProvider(content_repo))
     return manager
 

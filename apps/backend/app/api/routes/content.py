@@ -1,4 +1,5 @@
-from typing import Annotated
+from typing import Annotated, Any
+
 from fastapi import APIRouter, Depends, Query
 
 from app.api.dependencies import get_catalog_service, get_optional_current_user
@@ -16,7 +17,7 @@ async def get_content(
     identifier: str,
     catalog_service: Annotated[CatalogService, Depends(get_catalog_service)],
     current_user: Annotated[User | None, Depends(get_optional_current_user)] = None,
-) -> ApiResponse[ContentItemSchema]:
+) -> ApiResponse[Any]:
     user_id = current_user.id if current_user else None
     content = await catalog_service.get_content(identifier, user_id=user_id)
     return ApiResponse(success=True, data=content)
@@ -26,7 +27,7 @@ async def get_content(
 async def get_seasons(
     content_id: int,
     catalog_service: Annotated[CatalogService, Depends(get_catalog_service)],
-) -> ApiResponse[list[SeasonSchema]]:
+) -> ApiResponse[Any]:
     seasons = await catalog_service.get_seasons(content_id)
     return ApiResponse(success=True, data=seasons)
 
@@ -40,7 +41,7 @@ async def get_sources(
     season: int | None = None,
     dubber_id: int | None = Query(None, alias="dubberId"),
     source_id: int | None = Query(None, alias="sourceId"),
-) -> ApiResponse[list[StreamSourceSchema]]:
+) -> ApiResponse[Any]:
     effective_episode = episode_id if episode_id is not None else episode
     sources = await catalog_service.get_streams(
         content_id=content_id,

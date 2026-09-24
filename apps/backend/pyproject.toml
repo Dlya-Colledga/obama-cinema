@@ -16,6 +16,9 @@ dependencies = [
     "httpx>=0.27.0",
     "bcrypt>=4.2.0",
     "python-multipart>=0.0.12",
+    "anime-parsers-ru>=1.18.0",
+    "aiohttp>=3.10.0",
+    "aiohttp-socks>=0.10.0",
 ]
 
 [project.optional-dependencies]
@@ -23,6 +26,7 @@ dev = [
     "pytest>=8.3.0",
     "pytest-asyncio>=0.24.0",
     "ruff>=0.6.0",
+    "mypy>=1.11.0",
 ]
 
 [tool.pytest.ini_options]
@@ -36,6 +40,19 @@ pythonpath = ["."]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+strict = false
+warn_return_any = false
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
 
 [tool.setuptools.packages.find]
 where = ["."]

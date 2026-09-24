@@ -1,4 +1,5 @@
 from typing import Annotated, Any
+
 from fastapi import APIRouter, Depends, Query
 
 from app.api.dependencies import get_anime_service
@@ -37,7 +38,7 @@ async def popular_anime(
 async def get_anime_dubbers(
     id: int,
     anime_service: Annotated[AnimeService, Depends(get_anime_service)],
-) -> ApiResponse[list[AnimeDubberSchema]]:
+) -> ApiResponse[Any]:
     dubbers = await anime_service.get_dubbers(id)
     return ApiResponse(success=True, data=dubbers)
 
@@ -50,7 +51,7 @@ async def get_anime_episodes(
     dubber_id_camel: int | None = Query(None, alias="dubberId"),
     source_id: int | None = Query(None, alias="source_id"),
     source_id_camel: int | None = Query(None, alias="sourceId"),
-) -> ApiResponse[AnimeEpisodesResponseSchema]:
+) -> ApiResponse[Any]:
     eff_dubber = dubber_id if dubber_id is not None else dubber_id_camel
     eff_source = source_id if source_id is not None else source_id_camel
     episodes = await anime_service.get_episodes(
@@ -69,7 +70,7 @@ async def get_anime_streams(
     dubber_id_camel: int | None = Query(None, alias="dubberId"),
     source_id: int | None = Query(None, alias="source_id"),
     source_id_camel: int | None = Query(None, alias="sourceId"),
-) -> ApiResponse[list[StreamSourceSchema]]:
+) -> ApiResponse[Any]:
     eff_pos = episode if episode is not None else position
     eff_dubber = dubber_id if dubber_id is not None else dubber_id_camel
     eff_source = source_id if source_id is not None else source_id_camel
@@ -86,6 +87,6 @@ async def get_anime_streams(
 async def get_anime_release(
     id: int,
     anime_service: Annotated[AnimeService, Depends(get_anime_service)],
-) -> ApiResponse[AnimeReleaseSchema]:
+) -> ApiResponse[Any]:
     release = await anime_service.get_release(id)
     return ApiResponse(success=True, data=release)

@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
+
 from sqlalchemy import (
     BigInteger,
     CheckConstraint,
@@ -24,7 +25,9 @@ if TYPE_CHECKING:
 class Season(Base):
     __tablename__ = "seasons"
     __table_args__ = (
-        UniqueConstraint("content_id", "season_number", name="seasons_content_id_season_number_key"),
+        UniqueConstraint(
+            "content_id", "season_number", name="seasons_content_id_season_number_key"
+        ),
         CheckConstraint("season_number > 0", name="seasons_season_number_check"),
         Index("idx_seasons_content", "content_id"),
     )
@@ -51,7 +54,9 @@ class Season(Base):
 class Episode(Base):
     __tablename__ = "episodes"
     __table_args__ = (
-        UniqueConstraint("season_id", "episode_number", name="episodes_season_id_episode_number_key"),
+        UniqueConstraint(
+            "season_id", "episode_number", name="episodes_season_id_episode_number_key"
+        ),
         CheckConstraint("episode_number > 0", name="episodes_episode_number_check"),
         Index("idx_episodes_season", "season_id"),
         Index("idx_episodes_content", "content_id"),

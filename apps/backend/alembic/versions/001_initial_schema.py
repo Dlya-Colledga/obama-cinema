@@ -1,18 +1,17 @@
 """Initial schema with catalog, providers, users, social, and search triggers
 
 Revision ID: 001_initial
-Revises: 
+Revises: None
 Create Date: 2026-09-24
 
 """
+
 from collections.abc import Sequence
 
 from alembic import op
-import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '001_initial'
+revision: str = "001_initial"
 down_revision: str | None = None
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None

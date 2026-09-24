@@ -1,4 +1,5 @@
-from typing import Annotated
+from typing import Annotated, Any
+
 from fastapi import APIRouter, Depends, Query
 
 from app.api.dependencies import get_bookmark_service, get_current_user
@@ -21,7 +22,7 @@ async def get_bookmarks(
     category: str | None = None,
     page: int = Query(1, ge=1),
     limit: int = Query(24, ge=1, le=50),
-) -> ApiResponse[list[BookmarkItemSchema]]:
+) -> ApiResponse[Any]:
     result = await bookmark_service.get_bookmarks(
         current_user, category=category, page=page, limit=limit
     )
@@ -35,7 +36,7 @@ async def set_bookmark(
     dto: SetBookmarkRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     bookmark_service: Annotated[BookmarkService, Depends(get_bookmark_service)],
-) -> ApiResponse[BookmarkResponse]:
+) -> ApiResponse[Any]:
     result = await bookmark_service.set_bookmark(
         current_user, content_id=dto.content_id, category=dto.category
     )
@@ -47,8 +48,6 @@ async def remove_bookmark(
     content_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     bookmark_service: Annotated[BookmarkService, Depends(get_bookmark_service)],
-) -> ApiResponse[dict[str, str]]:
+) -> ApiResponse[Any]:
     await bookmark_service.remove_bookmark(current_user, content_id)
-    return ApiResponse(
-        success=True, data={"message": "Успешно удалено из закладок"}
-    )
+    return ApiResponse(success=True, data={"message": "Успешно удалено из закладок"})

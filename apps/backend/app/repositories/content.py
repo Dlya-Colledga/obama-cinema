@@ -1,6 +1,7 @@
 import math
 import re
 from typing import Any
+
 from sqlalchemy import (
     and_,
     asc,
@@ -9,6 +10,7 @@ from sqlalchemy import (
     or_,
     select,
     text,
+    true,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -20,8 +22,6 @@ from app.models.taxonomy import (
     ContentType,
     Country,
     Genre,
-    content_countries,
-    content_genres,
 )
 from app.schemas.catalog import CatalogFilterParams
 
@@ -36,19 +36,13 @@ class ContentRepository:
         conditions = []
 
         if filter_params.type:
-            conditions.append(
-                Content.content_type.has(ContentType.code == filter_params.type)
-            )
+            conditions.append(Content.content_type.has(ContentType.code == filter_params.type))
 
         if filter_params.genre:
-            conditions.append(
-                Content.genres.any(Genre.slug == filter_params.genre)
-            )
+            conditions.append(Content.genres.any(Genre.slug == filter_params.genre))
 
         if filter_params.country:
-            conditions.append(
-                Content.countries.any(Country.code == filter_params.country)
-            )
+            conditions.append(Content.countries.any(Country.code == filter_params.country))
 
         if filter_params.year_from is not None:
             conditions.append(Content.release_year >= filter_params.year_from)
@@ -72,7 +66,7 @@ class ContentRepository:
                 )
             )
 
-        where_clause = and_(*conditions) if conditions else True
+        where_clause = and_(*conditions) if conditions else true()
 
         # Total count
         count_stmt = select(func.count(Content.id)).where(where_clause)
@@ -80,6 +74,7 @@ class ContentRepository:
         total = count_res.scalar_one()
 
         # Sorting
+        order_by: list[Any]
         if filter_params.sort == "rating":
             order_by = [desc(Content.rating_cache), desc(Content.votes_count)]
         elif filter_params.sort == "newest":
@@ -124,9 +119,7 @@ class ContentRepository:
             },
         }
 
-    async def find_featured(
-        self, current_user_id: int | None = None
-    ) -> list[dict[str, Any]]:
+    async def find_featured(self, current_user_id: int | None = None) -> list[dict[str, Any]]:
         stmt = (
             select(Content)
             .options(
@@ -150,9 +143,7 @@ class ContentRepository:
     async def find_by_slug_or_id(
         self, identifier: str | int, current_user_id: int | None = None
     ) -> dict[str, Any] | None:
-        if isinstance(identifier, int) or (
-            isinstance(identifier, str) and identifier.isdigit()
-        ):
+        if isinstance(identifier, int) or (isinstance(identifier, str) and identifier.isdigit()):
             condition = Content.id == int(identifier)
         else:
             condition = Content.slug == str(identifier)
@@ -204,9 +195,7 @@ class ContentRepository:
             "duration_minutes": ep.duration_minutes,
         }
 
-    async def get_seasons_with_episodes(
-        self, content_id: int
-    ) -> list[dict[str, Any]]:
+    async def get_seasons_with_episodes(self, content_id: int) -> list[dict[str, Any]]:
         stmt = (
             select(Season)
             .options(selectinload(Season.episodes))
@@ -276,15 +265,9 @@ class ContentRepository:
         ]
 
     async def get_taxonomies(self) -> dict[str, Any]:
-        types_res = await self.session.execute(
-            select(ContentType).order_by(asc(ContentType.id))
-        )
-        genres_res = await self.session.execute(
-            select(Genre).order_by(asc(Genre.name))
-        )
-        countries_res = await self.session.execute(
-            select(Country).order_by(asc(Country.name))
-        )
+        types_res = await self.session.execute(select(ContentType).order_by(asc(ContentType.id)))
+        genres_res = await self.session.execute(select(Genre).order_by(asc(Genre.name)))
+        countries_res = await self.session.execute(select(Country).order_by(asc(Country.name)))
 
         types = types_res.scalars().all()
         genres = genres_res.scalars().all()
@@ -342,7 +325,9 @@ class ContentRepository:
                         "durationSeconds": p_row[1],
                         "isCompleted": bool(p_row[2]),
                         "episodeId": p_row[3],
-                        "lastWatchedAt": p_row[4].isoformat() if hasattr(p_row[4], "isoformat") else str(p_row[4]),
+                        "lastWatchedAt": p_row[4].isoformat()
+                        if hasattr(p_row[4], "isoformat")
+                        else str(p_row[4]),
                     }
 
         trailer_yt_id = None
@@ -372,12 +357,8 @@ class ContentRepository:
             "ratingCache": float(content.rating_cache),
             "votesCount": content.votes_count,
             "isFeatured": content.is_featured,
-            "genres": [
-                {"id": g.id, "slug": g.slug, "name": g.name} for g in content.genres
-            ],
-            "countries": [
-                {"id": c.id, "code": c.code, "name": c.name} for c in content.countries
-            ],
+            "genres": [{"id": g.id, "slug": g.slug, "name": g.name} for g in content.genres],
+            "countries": [{"id": c.id, "code": c.code, "name": c.name} for c in content.countries],
             "userRating": user_rating,
             "userBookmark": user_bookmark,
             "userProgress": user_progress,

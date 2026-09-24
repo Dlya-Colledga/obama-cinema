@@ -1,6 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import TYPE_CHECKING
+
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -13,6 +14,7 @@ from sqlalchemy import (
     Numeric,
     Text,
     func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -33,19 +35,23 @@ if TYPE_CHECKING:
 class Content(Base):
     __tablename__ = "contents"
     __table_args__ = (
-        CheckConstraint(
-            "release_year BETWEEN 1890 AND 2100", name="contents_release_year_check"
-        ),
-        CheckConstraint(
-            "rating_cache BETWEEN 0.0 AND 10.0", name="contents_rating_cache_check"
-        ),
+        CheckConstraint("release_year BETWEEN 1890 AND 2100", name="contents_release_year_check"),
+        CheckConstraint("rating_cache BETWEEN 0.0 AND 10.0", name="contents_rating_cache_check"),
         CheckConstraint("votes_count >= 0", name="contents_votes_count_check"),
         Index("idx_contents_type", "content_type_id"),
         Index("idx_contents_year", "release_year"),
         Index("idx_contents_rating", "rating_cache"),
         Index("idx_contents_created", "created_at"),
-        Index("idx_contents_featured", "is_featured", postgresql_where=(mapped_column("is_featured") == True)),  # noqa: E712
-        Index("idx_contents_trailer_url", "trailer_url", postgresql_where=(mapped_column("trailer_url") != None)),  # noqa: E711
+        Index(
+            "idx_contents_featured",
+            "is_featured",
+            postgresql_where=text("is_featured IS TRUE"),
+        ),
+        Index(
+            "idx_contents_trailer_url",
+            "trailer_url",
+            postgresql_where=text("trailer_url IS NOT NULL"),
+        ),
         Index("idx_contents_search_vector", "search_vector", postgresql_using="gin"),
     )
 
@@ -78,12 +84,8 @@ class Content(Base):
 
     # Relationships
     content_type: Mapped["ContentType"] = relationship(lazy="joined")
-    genres: Mapped[list["Genre"]] = relationship(
-        secondary=content_genres, lazy="selectin"
-    )
-    countries: Mapped[list["Country"]] = relationship(
-        secondary=content_countries, lazy="selectin"
-    )
+    genres: Mapped[list["Genre"]] = relationship(secondary=content_genres, lazy="selectin")
+    countries: Mapped[list["Country"]] = relationship(secondary=content_countries, lazy="selectin")
     seasons: Mapped[list["Season"]] = relationship(
         back_populates="content",
         cascade="all, delete-orphan",

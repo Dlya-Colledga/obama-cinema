@@ -1,13 +1,14 @@
-from datetime import datetime, timezone
 import math
+from datetime import datetime, timezone
 from typing import Any
+
 from sqlalchemy import and_, delete, desc, func, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.models.content import Content
-from app.models.episode import Episode, Season
+from app.models.episode import Episode
 from app.models.watch import WatchHistory, WatchProgress
 
 
@@ -92,9 +93,7 @@ class WatchRepository:
             else str(item.last_watched_at),
         }
 
-    async def get_recent_unfinished(
-        self, user_id: int, limit: int = 10
-    ) -> list[dict[str, Any]]:
+    async def get_recent_unfinished(self, user_id: int, limit: int = 10) -> list[dict[str, Any]]:
         stmt = (
             select(WatchProgress)
             .options(
@@ -153,12 +152,8 @@ class WatchRepository:
             )
         return items
 
-    async def get_history(
-        self, user_id: int, page: int = 1, limit: int = 24
-    ) -> dict[str, Any]:
-        count_stmt = select(func.count(WatchHistory.id)).where(
-            WatchHistory.user_id == user_id
-        )
+    async def get_history(self, user_id: int, page: int = 1, limit: int = 24) -> dict[str, Any]:
+        count_stmt = select(func.count(WatchHistory.id)).where(WatchHistory.user_id == user_id)
         count_res = await self.session.execute(count_stmt)
         total = count_res.scalar_one()
 
@@ -224,9 +219,7 @@ class WatchRepository:
             },
         }
 
-    async def clear_history(
-        self, user_id: int, history_id: int | None = None
-    ) -> None:
+    async def clear_history(self, user_id: int, history_id: int | None = None) -> None:
         if history_id is not None:
             stmt = delete(WatchHistory).where(
                 WatchHistory.user_id == user_id, WatchHistory.id == history_id

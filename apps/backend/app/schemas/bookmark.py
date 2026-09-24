@@ -1,5 +1,5 @@
-from typing import Literal
 from pydantic import field_validator
+
 from app.schemas.catalog import ContentItemSchema
 from app.schemas.common import CamelModel
 

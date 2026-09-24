@@ -1,4 +1,5 @@
-from typing import Annotated
+from typing import Annotated, Any
+
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import get_current_user, get_rating_service
@@ -19,7 +20,7 @@ async def rate_content_path(
     dto: RateContentRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     rating_service: Annotated[RatingService, Depends(get_rating_service)],
-) -> ApiResponse[RatingResponse]:
+) -> ApiResponse[Any]:
     result = await rating_service.rate(current_user, content_id, dto.rating)
     return ApiResponse(success=True, data=result)
 
@@ -32,7 +33,7 @@ async def delete_content_rating_path(
     content_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     rating_service: Annotated[RatingService, Depends(get_rating_service)],
-) -> ApiResponse[RatingResponse]:
+) -> ApiResponse[Any]:
     result = await rating_service.remove_rate(current_user, content_id)
     return ApiResponse(success=True, data=result)
 
@@ -45,7 +46,7 @@ async def rate_content_body(
     dto: RateContentRequest,
     current_user: Annotated[User, Depends(get_current_user)],
     rating_service: Annotated[RatingService, Depends(get_rating_service)],
-) -> ApiResponse[RatingResponse]:
+) -> ApiResponse[Any]:
     content_id = dto.content_id or 0
     result = await rating_service.rate(current_user, content_id, dto.rating)
     return ApiResponse(success=True, data=result)
@@ -59,6 +60,6 @@ async def delete_content_rating(
     content_id: int,
     current_user: Annotated[User, Depends(get_current_user)],
     rating_service: Annotated[RatingService, Depends(get_rating_service)],
-) -> ApiResponse[RatingResponse]:
+) -> ApiResponse[Any]:
     result = await rating_service.remove_rate(current_user, content_id)
     return ApiResponse(success=True, data=result)

@@ -56,23 +56,11 @@ class WatchService:
             user_id=user.id, content_id=content_id, episode_id=episode_id
         )
 
-    async def get_recent_unfinished(
-        self, user: User, limit: int = 10
-    ) -> list[dict[str, Any]]:
-        return await self.watch_repo.get_recent_unfinished(
-            user_id=user.id, limit=limit
-        )
+    async def get_recent_unfinished(self, user: User, limit: int = 10) -> list[dict[str, Any]]:
+        return await self.watch_repo.get_recent_unfinished(user_id=user.id, limit=limit)
 
-    async def get_history(
-        self, user: User, page: int = 1, limit: int = 24
-    ) -> dict[str, Any]:
-        return await self.watch_repo.get_history(
-            user_id=user.id, page=page, limit=limit
-        )
+    async def get_history(self, user: User, page: int = 1, limit: int = 24) -> dict[str, Any]:
+        return await self.watch_repo.get_history(user_id=user.id, page=page, limit=limit)
 
-    async def clear_history(
-        self, user: User, history_id: int | None = None
-    ) -> None:
-        await self.watch_repo.clear_history(
-            user_id=user.id, history_id=history_id
-        )
+    async def clear_history(self, user: User, history_id: int | None = None) -> None:
+        await self.watch_repo.clear_history(user_id=user.id, history_id=history_id)

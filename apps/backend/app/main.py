@@ -1,8 +1,10 @@
 from contextlib import asynccontextmanager
 from typing import AsyncGenerator
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.api.dependencies import _kodik_client, _shikimori_client
 from app.api.router import api_router
 from app.api.routes.health import router as health_router
 from app.core.config import get_settings
@@ -17,6 +19,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Startup actions
     yield
     # Shutdown actions
+    await _shikimori_client.close()
+    await _kodik_client.close()
     await engine.dispose()
 
 

@@ -2,13 +2,12 @@ import pytest
 from pydantic import ValidationError
 
 from app.core.security import sanitize_text
-from app.providers.anixart.client import AnixartClient
-from app.providers.anixart.parsers.anilibria import AnilibriaParser
-from app.providers.anixart.parsers.kodik import KodikParser
-from app.providers.anixart.parsers.resolver import StreamResolver
+from app.providers.kodik.client import KodikClient
+from app.providers.kodik.provider import KodikStreamProvider
+from app.providers.shikimori.client import ShikimoriClient
 from app.repositories.content import ContentRepository
-from app.schemas.auth import LoginRequest, RegisterRequest
-from app.schemas.bookmark import SetBookmarkRequest, VALID_BOOKMARK_CATEGORIES
+from app.schemas.auth import RegisterRequest
+from app.schemas.bookmark import SetBookmarkRequest
 from app.schemas.catalog import CatalogFilterParams
 from app.schemas.rating import RateContentRequest
 from app.services.anime import AnimeService
@@ -87,55 +86,17 @@ def test_catalog_filter_params() -> None:
     assert params.limit == 12
 
 
-def test_kodik_parser_supports() -> None:
-    parser = KodikParser()
-    assert parser.supports("https://kodikplayer.com/seria/123/abc/720p", "Kodik")
-    assert parser.supports("https://kodik.info/video/456/def", "kodik")
-    assert not parser.supports("https://youtube.com/watch?v=123", "YouTube")
-
-
-def test_anilibria_parser_supports() -> None:
-    parser = AnilibriaParser()
-    assert parser.supports("https://anixart.libria.fun/public/iframe.php?id=8789&ep=1", "Libria")
-    assert parser.supports("https://aniliberty.top/releases/123", "AniLibria")
-
-
-@pytest.mark.asyncio
-async def test_stream_resolver_fallback() -> None:
-    resolver = StreamResolver()
-    streams = await resolver.resolve("https://embed.external-player.com/watch/999", "ExternalPlayer", "AniDUB")
-    assert len(streams) > 0
-    first = streams[0]
-    assert first["playerType"] == "iframe"
-    assert first["streamUrl"] == "https://embed.external-player.com/watch/999"
-    assert first["translationTitle"] == "AniDUB"
-
-
-def test_anime_service_normalize_release() -> None:
-    client = AnixartClient()
-    resolver = StreamResolver()
-    service = AnimeService(client, resolver)
-
-    raw = {
-        "id": 16648,
-        "title_ru": "Магическая битва",
-        "title_original": "Jujutsu Kaisen",
-        "year": "2020",
-        "genres": "экшен, сёнен, фэнтези",
-        "grade": 4.75,
-        "poster": "poster_hash_123",
-        "episodes_total": 24,
-        "episodes_released": 24,
-        "studio": "MAPPA",
-    }
-
-    normalized = service.normalize_release(raw, extended=True)
-    assert normalized["title"] == "Магическая битва"
-    assert normalized["titleOriginal"] == "Jujutsu Kaisen"
-    assert normalized["rating"] == 9.5  # 4.75 * 2 = 9.5
-    assert normalized["posterUrl"] == "https://s.anixmirai.com/posters/poster_hash_123.jpg"
-    assert len(normalized["genres"]) == 3
-    assert normalized["genres"][0] == "экшен"
+def test_kodik_provider_is_generalized() -> None:
+    """Ensure Kodik is not restricted to anime and supports all media types."""
+    provider = KodikStreamProvider(content_repo=None, kodik_client=KodikClient())
+    # Supports movies, series, cartoons, anime, doramas, donghuas
+    assert provider.supports("movie")
+    assert provider.supports("series")
+    assert provider.supports("cartoon")
+    assert provider.supports("anime")
+    assert provider.supports("donghua")
+    assert provider.supports("dorama")
+    assert provider.get_identifier() == "kodik"
 
 
 def test_extract_youtube_id() -> None:
@@ -148,46 +109,91 @@ def test_extract_youtube_id() -> None:
     }
 
     for url, expected in samples.items():
-        assert AnimeService.extract_youtube_id(url) == expected
+        assert ShikimoriClient.extract_youtube_id(url) == expected
         assert ContentRepository.extract_youtube_id(url) == expected
 
-    assert AnimeService.extract_youtube_id("https://vk.com/video12345") is None
+    assert ShikimoriClient.extract_youtube_id("https://vk.com/video12345") is None
 
 
-@pytest.mark.asyncio
-async def test_anime_service_filters_trailers() -> None:
-    class FakeClient(AnixartClient):
-        async def get_release_videos(self, release_id: int) -> dict:
-            return {
-                "code": 0,
-                "last_videos": [
-                    {
-                        "category": {"id": 3, "name": "Опенинги"},
-                        "hosting": {"id": 2, "name": "YouTube"},
-                        "title": "Opening 1",
-                        "url": "https://youtu.be/OP111111111",
-                    },
-                    {
-                        "category": {"id": 4, "name": "Эндинги"},
-                        "hosting": {"id": 2, "name": "YouTube"},
-                        "title": "Ending 1",
-                        "url": "https://youtu.be/ED222222222",
-                    },
-                    {
-                        "category": {"id": 1, "name": "Трейлеры"},
-                        "hosting": {"id": 3, "name": "ВКонтакте"},
-                        "title": "Трейлер в ВК",
-                        "url": "https://vk.com/video-12345_67890",
-                    },
-                    {
-                        "category": {"id": 1, "name": "Трейлеры"},
-                        "hosting": {"id": 2, "name": "YouTube"},
-                        "title": "Главный трейлер",
-                        "url": "https://youtu.be/TLmRzMmyYok",
-                    },
-                ],
-            }
+def test_strict_youtube_trailer_filtering() -> None:
+    """Ensure only YouTube trailers are returned, strictly rejecting VK, openings, endings, etc."""
+    raw_videos = [
+        {
+            "kind": "op",
+            "hosting": "youtube",
+            "name": "Opening 1",
+            "url": "https://youtu.be/OP111111111",
+        },
+        {
+            "kind": "ed",
+            "hosting": "youtube",
+            "name": "Ending 1",
+            "url": "https://youtu.be/ED222222222",
+        },
+        {
+            "kind": "pv",
+            "hosting": "vk",
+            "name": "Трейлер VK",
+            "url": "https://vk.com/video-12345_67890",
+        },
+        {
+            "kind": "pv",
+            "hosting": "smotret_anime",
+            "name": "Трейлер Smotret",
+            "url": "https://smotret-anime.online/video/123",
+        },
+        {
+            "kind": "pv",
+            "hosting": "youtube",
+            "name": "Официальный трейлер",
+            "url": "https://youtu.be/nk2BHu3Mbes",
+        },
+    ]
 
-    service = AnimeService(FakeClient(), StreamResolver())
-    trailer_id = await service.get_trailer_youtube_id(12345)
-    assert trailer_id == "TLmRzMmyYok"
+    yt_id, yt_url = ShikimoriClient.extract_strict_youtube_trailer(raw_videos)
+    assert yt_id == "nk2BHu3Mbes"
+    assert yt_url == "https://www.youtube.com/watch?v=nk2BHu3Mbes"
+
+
+def test_anime_service_normalize_release() -> None:
+    shiki = ShikimoriClient()
+    kodik = KodikClient()
+    service = AnimeService(shiki, kodik)
+
+    raw_shiki = {
+        "id": 16498,
+        "name": "Shingeki no Kyojin",
+        "russian": "Атака титанов",
+        "image": {
+            "original": "/system/animes/original/16498.jpg",
+            "preview": "/system/animes/preview/16498.jpg",
+        },
+        "score": "8.58",
+        "aired_on": "2013-04-07",
+        "episodes": 25,
+        "episodes_aired": 25,
+        "duration": 24,
+        "status": "released",
+        "genres": [
+            {"id": 1, "name": "Action", "russian": "Экшен"},
+            {"id": 8, "name": "Drama", "russian": "Драма"},
+        ],
+        "studios": [{"id": 35, "name": "Wit Studio"}],
+        "description": "[b]С давних времён[/b] человечество ведёт борьбу с титанами.",
+    }
+
+    normalized = service.normalize_release(raw_shiki, extended=True)
+    assert normalized["id"] == 16498
+    assert normalized["title"] == "Атака титанов"
+    assert normalized["titleOriginal"] == "Shingeki no Kyojin"
+    assert normalized["year"] == 2013
+    assert normalized["rating"] == 8.6
+    assert normalized["grade5"] == 4.3
+    assert normalized["episodesTotal"] == 25
+    assert normalized["studio"] == "Wit Studio"
+    assert normalized["status"] == "Завершён"
+    assert normalized["posterUrl"] == "https://shikimori.io/system/animes/original/16498.jpg"
+    assert "[b]" not in normalized["description"]
+    assert "С давних времён" in normalized["description"]
+    assert len(normalized["genres"]) == 2
+    assert "Экшен" in normalized["genres"]

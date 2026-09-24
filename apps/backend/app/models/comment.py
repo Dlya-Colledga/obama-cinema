@@ -1,5 +1,6 @@
 from datetime import datetime
 from typing import TYPE_CHECKING
+
 from sqlalchemy import (
     BigInteger,
     Boolean,
@@ -54,9 +55,7 @@ class Comment(Base):
 
     user: Mapped["User"] = relationship(back_populates="comments", lazy="joined")
     content: Mapped["Content"] = relationship(back_populates="comments")
-    parent: Mapped["Comment | None"] = relationship(
-        remote_side=[id], back_populates="replies"
-    )
+    parent: Mapped["Comment | None"] = relationship(remote_side=[id], back_populates="replies")
     replies: Mapped[list["Comment"]] = relationship(
         back_populates="parent", cascade="all, delete-orphan"
     )

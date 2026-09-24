@@ -1,4 +1,5 @@
 from pydantic import model_validator
+
 from app.schemas.catalog import ContentTypeSchema
 from app.schemas.common import CamelModel
 

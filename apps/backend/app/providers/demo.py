@@ -18,9 +18,7 @@ class DemoStreamProvider:
         self, content_id: int, episode_id: int | None = None
     ) -> list[dict[str, Any]]:
         if self.content_repo is not None:
-            db_sources = await self.content_repo.get_stream_sources(
-                content_id, episode_id
-            )
+            db_sources = await self.content_repo.get_stream_sources(content_id, episode_id)
             if db_sources:
                 return db_sources
 

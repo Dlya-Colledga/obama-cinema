@@ -1,4 +1,5 @@
 from pydantic import field_validator
+
 from app.schemas.common import CamelModel
 
 

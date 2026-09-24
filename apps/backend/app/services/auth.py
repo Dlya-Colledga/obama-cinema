@@ -1,4 +1,5 @@
 from typing import Any
+
 from app.core.security import generate_token, hash_password, sanitize_text, verify_password
 from app.exceptions import AuthenticationException, ConflictException
 from app.models.user import User
@@ -82,9 +83,7 @@ class AuthService:
     async def get_me(self, user: User) -> dict[str, Any]:
         return self.format_user(user, include_private=True)
 
-    async def update_profile(
-        self, user: User, dto: UpdateProfileRequest
-    ) -> dict[str, Any]:
+    async def update_profile(self, user: User, dto: UpdateProfileRequest) -> dict[str, Any]:
         bio = sanitize_text(dto.bio) if dto.bio is not None else None
         await self.user_repo.update_profile(
             user_id=user.id,

@@ -1,6 +1,3 @@
-from typing import Any
-
-
 class AppException(Exception):
     def __init__(
         self,

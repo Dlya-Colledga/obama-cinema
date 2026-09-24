@@ -1,5 +1,6 @@
 import time
 from typing import Any
+
 from fastapi import APIRouter
 
 router = APIRouter(tags=["health"])

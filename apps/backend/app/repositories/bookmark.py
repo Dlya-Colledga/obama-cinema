@@ -1,5 +1,6 @@
 import math
 from typing import Any
+
 from sqlalchemy import and_, delete, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -85,10 +86,7 @@ class BookmarkRepository:
                         "ratingCache": float(c.rating_cache),
                         "votesCount": c.votes_count,
                         "isFeatured": c.is_featured,
-                        "genres": [
-                            {"id": g.id, "slug": g.slug, "name": g.name}
-                            for g in c.genres
-                        ],
+                        "genres": [{"id": g.id, "slug": g.slug, "name": g.name} for g in c.genres],
                         "countries": [
                             {"id": cnt.id, "code": cnt.code, "name": cnt.name}
                             for cnt in c.countries
@@ -110,9 +108,7 @@ class BookmarkRepository:
             },
         }
 
-    async def set_category(
-        self, user_id: int, content_id: int, category: str
-    ) -> None:
+    async def set_category(self, user_id: int, content_id: int, category: str) -> None:
         # Delete existing bookmark for this content
         del_stmt = delete(Bookmark).where(
             Bookmark.user_id == user_id, Bookmark.content_id == content_id
@@ -120,9 +116,7 @@ class BookmarkRepository:
         await self.session.execute(del_stmt)
 
         # Insert new bookmark
-        bookmark = Bookmark(
-            user_id=user_id, content_id=content_id, category=category
-        )
+        bookmark = Bookmark(user_id=user_id, content_id=content_id, category=category)
         self.session.add(bookmark)
         await self.session.flush()
 
@@ -132,9 +126,7 @@ class BookmarkRepository:
         )
         await self.session.execute(del_stmt)
 
-    async def get_user_bookmark(
-        self, user_id: int, content_id: int
-    ) -> str | None:
+    async def get_user_bookmark(self, user_id: int, content_id: int) -> str | None:
         stmt = select(Bookmark.category).where(
             Bookmark.user_id == user_id, Bookmark.content_id == content_id
         )

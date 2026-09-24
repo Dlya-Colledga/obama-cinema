@@ -15,9 +15,7 @@ class RatingService:
         self.rating_repo = rating_repo
         self.content_repo = content_repo
 
-    async def rate(
-        self, user: User, content_id: int, rating: int
-    ) -> dict[str, Any]:
+    async def rate(self, user: User, content_id: int, rating: int) -> dict[str, Any]:
         if rating < 1 or rating > 10:
             raise ValidationException(
                 "Ошибка валидации оценки",
