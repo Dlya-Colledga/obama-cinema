@@ -433,12 +433,14 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
           {/* Centered fallback when trailer is absent: stretched blurred cover */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
             <img
-              src={content.bannerUrl || content.posterUrl}
+              src={content.posterUrl || content.bannerUrl || undefined}
               alt=""
-              className="w-full h-full object-cover scale-125 filter blur-3xl opacity-35"
+              className="w-full h-full object-cover scale-110 filter blur-xl sm:blur-2xl opacity-70 brightness-90 contrast-[1.05]"
             />
-            <div className="absolute inset-0 bg-radial from-transparent via-black/75 to-black" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-black/30" />
+            {/* Dark tint and gradient vignettes for high contrast and seamless border blend */}
+            <div className="absolute inset-0 bg-black/40 pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 via-20% to-transparent pointer-events-none" />
+            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-transparent to-transparent pointer-events-none" />
           </div>
 
           {/* Centered card content ("нагло встает по середине") */}
