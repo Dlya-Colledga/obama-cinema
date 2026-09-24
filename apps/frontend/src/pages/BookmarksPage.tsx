@@ -5,9 +5,8 @@ import { api } from '../api/client';
 import { BookmarkItem, BookmarkCategory, BOOKMARK_LABELS } from '../types';
 import { useAuth } from '../features/auth/AuthContext';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
-import { ContentCard } from '../features/catalog/components/ContentCard';
+import { ContentCard, ContentCardSkeleton } from '../features/catalog/components/ContentCard';
 
 export const BookmarksPage: React.FC = () => {
   const { user } = useAuth();
@@ -107,7 +106,7 @@ export const BookmarksPage: React.FC = () => {
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-[2/3] rounded-2xl" />
+            <ContentCardSkeleton key={i} />
           ))}
         </div>
       ) : bookmarks.length > 0 ? (

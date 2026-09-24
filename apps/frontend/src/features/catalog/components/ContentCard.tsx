@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Star, Play, Bookmark } from 'lucide-react';
 import { ContentItem } from '../../../types';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface ContentCardProps {
   item: ContentItem;
@@ -92,5 +93,33 @@ export const ContentCard: React.FC<ContentCardProps> = ({ item, showProgress = t
         )}
       </div>
     </Link>
+  );
+};
+
+export const ContentCardSkeleton: React.FC = () => {
+  return (
+    <div className="relative flex flex-col rounded-2xl overflow-hidden bg-[#000000] border border-white/5 select-none">
+      {/* Poster Container */}
+      <div className="relative aspect-[2/3] w-full overflow-hidden bg-white/5">
+        <Skeleton className="w-full h-full rounded-none" />
+        <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between pointer-events-none">
+          <Skeleton className="h-5 w-12 rounded-full bg-white/10" />
+          <Skeleton className="h-5 w-8 rounded-full bg-white/10" />
+        </div>
+      </div>
+
+      {/* Info Container */}
+      <div className="p-3.5 flex flex-col flex-grow justify-between space-y-2">
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5">
+            <Skeleton className="h-3 w-14 rounded" />
+            <span className="text-xs text-muted-foreground">•</span>
+            <Skeleton className="h-3 w-8 rounded" />
+          </div>
+          <Skeleton className="h-4 w-4/5 rounded" />
+        </div>
+        <Skeleton className="h-3 w-2/3 rounded mt-1" />
+      </div>
+    </div>
   );
 };

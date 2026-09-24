@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   Dialog,
   DialogContent,
@@ -154,7 +155,27 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ contentId }) => 
 
       {/* Comments List */}
       <div className="space-y-4">
-        {comments.map((comment) => {
+        {isLoading ? (
+          Array.from({ length: 3 }).map((_, i) => (
+            <div
+              key={i}
+              className="p-4 rounded-2xl bg-background border border-white/5 space-y-3 select-none"
+            >
+              <div className="flex items-center gap-2.5">
+                <Skeleton className="size-8 rounded-full" />
+                <div className="space-y-1">
+                  <Skeleton className="h-3.5 w-28 rounded" />
+                  <Skeleton className="h-2.5 w-20 rounded" />
+                </div>
+              </div>
+              <div className="space-y-1.5 pt-1">
+                <Skeleton className="h-3.5 w-full rounded" />
+                <Skeleton className="h-3.5 w-3/4 rounded" />
+              </div>
+            </div>
+          ))
+        ) : (
+          comments.map((comment) => {
           const isAuthor = user && user.id === comment.user.id;
           const canDelete = isAuthor || (user && (user.role === 'admin' || user.role === 'moderator'));
 
@@ -229,7 +250,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ contentId }) => 
               </p>
             </div>
           );
-        })}
+        }))}
 
         {!isLoading && comments.length === 0 && (
           <div className="text-center py-10 text-muted-foreground text-xs">

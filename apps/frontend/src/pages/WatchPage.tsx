@@ -110,9 +110,46 @@ export const WatchPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <Skeleton className="h-6 w-32" />
-        <Skeleton className="w-full aspect-video rounded-3xl" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6 select-none">
+        {/* Back to Overview Breadcrumb Skeleton */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Skeleton className="size-4 rounded" />
+            <Skeleton className="h-4 w-48 rounded" />
+          </div>
+          <Skeleton className="h-9 w-28 rounded-xl" />
+        </div>
+
+        {/* Main Cinema Player Skeleton */}
+        <div className="w-full aspect-video rounded-3xl overflow-hidden bg-black border border-white/10 relative">
+          <Skeleton className="w-full h-full rounded-none opacity-30" />
+        </div>
+
+        {/* Title & Info Bar Skeleton */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 border-b border-white/5">
+          <div className="space-y-1.5">
+            <Skeleton className="h-7 w-64 rounded-xl" />
+            <Skeleton className="h-4 w-40 rounded" />
+          </div>
+          <div className="flex items-center gap-2">
+            <Skeleton className="h-4 w-12 rounded" />
+            <Skeleton className="h-4 w-8 rounded" />
+            <Skeleton className="h-4 w-24 rounded" />
+          </div>
+        </div>
+
+        {/* Episode Selector Skeleton */}
+        <div className="space-y-4 pt-2">
+          <div className="flex items-center gap-2">
+            <Skeleton className="size-4 rounded" />
+            <Skeleton className="h-5 w-28 rounded" />
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <Skeleton key={i} className="h-12 rounded-xl" />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }

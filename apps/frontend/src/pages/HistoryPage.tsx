@@ -121,7 +121,29 @@ export const HistoryPage: React.FC = () => {
       {isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-2xl w-full" />
+            <div
+              key={i}
+              className="p-4 rounded-2xl bg-card border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 select-none"
+            >
+              <div className="flex items-center gap-4 min-w-0 flex-1">
+                <div className="w-20 aspect-[16/10] rounded-xl overflow-hidden bg-white/5 shrink-0">
+                  <Skeleton className="w-full h-full rounded-none" />
+                </div>
+                <div className="space-y-2 flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <Skeleton className="h-3 w-16 rounded" />
+                    <span className="text-xs text-muted-foreground">•</span>
+                    <Skeleton className="h-3 w-24 rounded" />
+                  </div>
+                  <Skeleton className="h-4 w-48 sm:w-64 rounded" />
+                  <Skeleton className="h-3 w-32 rounded" />
+                </div>
+              </div>
+              <div className="flex items-center gap-3 shrink-0 self-end sm:self-center">
+                <Skeleton className="h-9 w-28 rounded-xl" />
+                <Skeleton className="size-9 rounded-xl" />
+              </div>
+            </div>
           ))}
         </div>
       ) : history.length > 0 ? (

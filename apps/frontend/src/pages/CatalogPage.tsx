@@ -3,9 +3,8 @@ import { useSearchParams } from 'react-router-dom';
 import { SlidersHorizontal, RotateCcw } from 'lucide-react';
 import { api, animeApi } from '../api/client';
 import { ContentItem, ContentType, Genre, Country, PaginationMeta } from '../types';
-import { ContentCard } from '../features/catalog/components/ContentCard';
+import { ContentCard, ContentCardSkeleton } from '../features/catalog/components/ContentCard';
 import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
 import {
   Select,
   SelectContent,
@@ -253,7 +252,7 @@ export const CatalogPage: React.FC = () => {
       {isLoading ? (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
           {Array.from({ length: 12 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-[2/3] rounded-2xl" />
+            <ContentCardSkeleton key={i} />
           ))}
         </div>
       ) : items.length > 0 ? (

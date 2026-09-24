@@ -61,6 +61,8 @@ export interface YTPlayerInstance {
   setVolume: (volume: number) => void;
   getVolume: () => number;
   seekTo: (seconds: number, allowSeekAhead?: boolean) => void;
+  getCurrentTime?: () => number;
+  getDuration?: () => number;
   destroy: () => void;
 }
 
@@ -75,6 +77,8 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
 
   const containerRef = useRef<HTMLDivElement>(null);
   const ytPlayerRef = useRef<YTPlayerInstance | null>(null);
+  const revealTimeoutRef = useRef<number | null>(null);
+  const loopIntervalRef = useRef<number | null>(null);
 
   const trailerId = content.trailerYoutubeId;
   const youtubeUrl = trailerId
@@ -90,6 +94,15 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
     let isMounted = true;
     setIsPlaying(false);
     setHasError(false);
+
+    if (revealTimeoutRef.current) {
+      clearTimeout(revealTimeoutRef.current);
+      revealTimeoutRef.current = null;
+    }
+    if (loopIntervalRef.current) {
+      clearInterval(loopIntervalRef.current);
+      loopIntervalRef.current = null;
+    }
 
     // Load YouTube API script if not already present
     if (!window.YT || !window.YT.Player) {
@@ -122,8 +135,6 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
             controls: 0,
             showinfo: 0,
             rel: 0,
-            loop: 1,
-            playlist: trailerId,
             disablekb: 1,
             fs: 0,
             playsinline: 1,
@@ -140,11 +151,18 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
             },
             onStateChange: (event) => {
               if (!isMounted) return;
-              // 1 === PLAYING: reveal video smoothly, no controls ever visible
+              // 1 === PLAYING: reveal video smoothly after initial YouTube pause/controls OSD has faded out
               if (event.data === 1) {
-                setIsPlaying(true);
+                if (revealTimeoutRef.current) {
+                  clearTimeout(revealTimeoutRef.current);
+                }
+                revealTimeoutRef.current = window.setTimeout(() => {
+                  if (isMounted) {
+                    setIsPlaying(true);
+                  }
+                }, 1300);
               }
-              // 0 === ENDED: loop replay seamlessly
+              // 0 === ENDED: seamless loop replay fallback
               if (event.data === 0) {
                 event.target.seekTo(0);
                 event.target.playVideo();
@@ -157,6 +175,26 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
             },
           },
         });
+
+        // Background seamless loop monitor (restarts video just before it ends to prevent YouTube related videos / end screen)
+        if (loopIntervalRef.current) {
+          clearInterval(loopIntervalRef.current);
+        }
+        loopIntervalRef.current = window.setInterval(() => {
+          if (!isMounted || !ytPlayerRef.current) return;
+          try {
+            const player = ytPlayerRef.current;
+            if (typeof player.getCurrentTime === 'function' && typeof player.getDuration === 'function') {
+              const current = player.getCurrentTime();
+              const duration = player.getDuration();
+              if (duration > 0 && current >= duration - 0.4) {
+                player.seekTo(0, true);
+              }
+            }
+          } catch {
+            // ignore
+          }
+        }, 300);
       } catch (e) {
         console.warn('YouTube Player initialization failed', e);
         if (isMounted) {
@@ -177,6 +215,14 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
 
     return () => {
       isMounted = false;
+      if (revealTimeoutRef.current) {
+        clearTimeout(revealTimeoutRef.current);
+        revealTimeoutRef.current = null;
+      }
+      if (loopIntervalRef.current) {
+        clearInterval(loopIntervalRef.current);
+        loopIntervalRef.current = null;
+      }
       if (ytPlayerRef.current) {
         try {
           ytPlayerRef.current.destroy();

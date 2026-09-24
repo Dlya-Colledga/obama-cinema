@@ -45,14 +45,100 @@ export const ContentDetailPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        <Skeleton className="w-full aspect-[21/9] min-h-[480px] rounded-3xl" />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Skeleton className="aspect-[2/3] rounded-2xl" />
-          <div className="md:col-span-2 space-y-4">
-            <Skeleton className="h-10 w-3/4" />
-            <Skeleton className="h-24 w-full" />
-            <Skeleton className="h-40 w-full" />
+      <div className="pb-20 space-y-10 select-none">
+        {/* Netflix-style Hero Skeleton */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+          <div className="relative w-full rounded-3xl overflow-hidden border border-white/10 bg-card min-h-[480px] md:min-h-[560px] lg:min-h-[620px] flex items-end sm:items-center">
+            {/* Top-right control buttons skeleton */}
+            <div className="absolute top-4 right-4 sm:top-auto sm:bottom-6 sm:right-6 z-20 flex items-center gap-2.5">
+              <Skeleton className="size-10 sm:size-11 rounded-full" />
+              <Skeleton className="size-10 sm:size-11 rounded-full" />
+              <Skeleton className="h-6 w-10 rounded-md" />
+            </div>
+
+            {/* Left Content / Poster & Title Skeleton */}
+            <div className="relative z-10 w-full max-w-4xl p-6 sm:p-10 md:p-12 flex flex-col sm:flex-row items-center sm:items-end gap-6 sm:gap-8">
+              {/* Cover / Poster Thumbnail */}
+              <div className="w-32 sm:w-40 md:w-48 aspect-[2/3] rounded-2xl overflow-hidden bg-white/5 border border-white/20 shrink-0">
+                <Skeleton className="w-full h-full rounded-none" />
+              </div>
+
+              {/* Title & Metadata */}
+              <div className="space-y-4 text-center sm:text-left flex-1 min-w-0">
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                  <Skeleton className="h-5 w-10 rounded-md" />
+                  <Skeleton className="h-5 w-14 rounded-full" />
+                  <Skeleton className="h-5 w-16 rounded-full" />
+                  <Skeleton className="h-5 w-14 rounded-full" />
+                </div>
+
+                <div className="space-y-2">
+                  <Skeleton className="h-8 sm:h-12 w-4/5 mx-auto sm:mx-0 rounded-xl" />
+                  <Skeleton className="h-4 w-1/2 mx-auto sm:mx-0 rounded" />
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-1.5 pt-1">
+                  <Skeleton className="h-5 w-16 rounded-lg" />
+                  <Skeleton className="h-5 w-20 rounded-lg" />
+                  <Skeleton className="h-5 w-16 rounded-lg" />
+                </div>
+
+                <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2">
+                  <Skeleton className="h-11 w-44 rounded-xl" />
+                  <Skeleton className="h-11 w-32 rounded-xl" />
+                  <Skeleton className="h-11 w-36 rounded-xl" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content Details & Metadata Below Hero */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+          {/* Interactive Rating & Score Bar */}
+          <div className="p-4 rounded-2xl bg-card border border-white/5 flex flex-wrap items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-9 w-24 rounded-xl" />
+              <div className="hidden sm:flex items-center gap-1">
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <Skeleton key={i} className="size-6 rounded" />
+                ))}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-8 w-16 rounded-lg" />
+              <Skeleton className="h-4 w-20 rounded" />
+            </div>
+          </div>
+
+          {/* Quick Meta Stats Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Card key={i} className="border-white/5 bg-card">
+                <CardContent className="p-3.5 space-y-2">
+                  <Skeleton className="h-3 w-20 rounded" />
+                  <Skeleton className="h-4 w-24 rounded" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Description / Synopsis Box */}
+          <div className="space-y-4 bg-card rounded-3xl p-6 sm:p-8 border border-white/5">
+            <Skeleton className="h-5 w-28 rounded-md" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-full rounded" />
+              <Skeleton className="h-4 w-full rounded" />
+              <Skeleton className="h-4 w-3/4 rounded" />
+            </div>
+            <div className="pt-2 space-y-2">
+              <Skeleton className="h-3 w-16 rounded" />
+              <div className="flex flex-wrap gap-2">
+                <Skeleton className="h-6 w-20 rounded-xl" />
+                <Skeleton className="h-6 w-24 rounded-xl" />
+                <Skeleton className="h-6 w-16 rounded-xl" />
+              </div>
+            </div>
           </div>
         </div>
       </div>

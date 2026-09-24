@@ -4,7 +4,7 @@ import { Play, Star, ChevronRight, Clock } from 'lucide-react';
 import { api } from '../api/client';
 import { ContentItem, WatchProgress } from '../types';
 import { useAuth } from '../features/auth/AuthContext';
-import { ContentCard } from '../features/catalog/components/ContentCard';
+import { ContentCard, ContentCardSkeleton } from '../features/catalog/components/ContentCard';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -44,11 +44,47 @@ export const HomePage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-12">
-        <Skeleton className="w-full aspect-[21/9] rounded-3xl" />
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} className="aspect-[2/3] rounded-2xl" />
+      <div className="space-y-12 pb-16">
+        {/* Hero Section Skeleton */}
+        <section className="relative w-full aspect-[16/9] sm:aspect-[21/9] max-h-[650px] overflow-hidden select-none bg-black">
+          <Skeleton className="w-full h-full rounded-none opacity-20" />
+          <div className="absolute inset-0 bg-gradient-to-t from-[#000000] via-[#000000]/60 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-r from-[#000000] via-[#000000]/70 to-transparent w-full sm:w-2/3" />
+          <div className="absolute inset-0 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-end pb-12 sm:pb-16">
+            <div className="max-w-2xl space-y-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Skeleton className="h-5 w-16 rounded-full" />
+                <Skeleton className="h-5 w-12 rounded-full" />
+                <Skeleton className="h-5 w-8 rounded-full" />
+                <Skeleton className="h-5 w-10 rounded-full" />
+              </div>
+              <Skeleton className="h-10 sm:h-14 w-3/4 rounded-xl" />
+              <div className="space-y-1.5">
+                <Skeleton className="h-4 w-full rounded" />
+                <Skeleton className="h-4 w-4/5 rounded" />
+              </div>
+              <div className="flex items-center gap-3 pt-2">
+                <Skeleton className="h-11 w-40 rounded-xl" />
+                <Skeleton className="h-11 w-32 rounded-xl" />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Content Rails Skeletons */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
+          {['Популярные фильмы', 'Популярные сериалы', 'Горячее аниме'].map((_, idx) => (
+            <section key={idx} className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-6 w-44 rounded-lg" />
+                <Skeleton className="h-4 w-20 rounded" />
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <ContentCardSkeleton key={i} />
+                ))}
+              </div>
+            </section>
           ))}
         </div>
       </div>
