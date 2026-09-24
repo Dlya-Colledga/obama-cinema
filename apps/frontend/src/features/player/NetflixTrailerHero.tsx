@@ -300,7 +300,7 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
             <img
               src={content.bannerUrl || content.posterUrl}
               alt=""
-              className="w-full h-full object-cover opacity-40 filter blur-sm scale-105"
+              className="w-full h-full object-cover opacity-65 filter blur-sm scale-105 brightness-110"
             />
           </div>
 
@@ -308,7 +308,7 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
           {isDesktop && (
             <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
               <div
-                className={`w-[180%] h-[180%] -left-[40%] -top-[40%] absolute transition-opacity duration-700 pointer-events-none ${
+                className={`w-[180%] h-[180%] -left-[40%] -top-[40%] absolute transition-opacity duration-700 pointer-events-none filter brightness-115 contrast-[1.03] ${
                   isPlaying ? 'opacity-100' : 'opacity-0'
                 }`}
               >
@@ -317,10 +317,10 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
             </div>
           )}
 
-          {/* Dark gradient vignettes for contrast and cinematic look */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 sm:via-black/70 to-transparent pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-transparent pointer-events-none" />
+          {/* Cinematic gradient vignettes: strong on the left for text legibility, clear and bright on the right for video */}
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 via-35% sm:via-black/60 sm:via-45% to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 via-15% to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/25 via-transparent to-transparent pointer-events-none" />
 
           {/* Controls: strictly desktop PC only */}
           {isDesktop && (
