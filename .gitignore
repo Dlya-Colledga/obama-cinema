@@ -28,7 +28,7 @@ pnpm-debug.log*
 # Docker volumes
 postgres_data/
 
-# Python
+.venv*
 .venv/
 __pycache__/
 *.py[cod]

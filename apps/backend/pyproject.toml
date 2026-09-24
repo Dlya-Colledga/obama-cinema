@@ -40,6 +40,7 @@ pythonpath = ["."]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+extend-exclude = [".venv*"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]

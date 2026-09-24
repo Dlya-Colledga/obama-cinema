@@ -27,6 +27,7 @@ services:
       - "8000:8000"
     volumes:
       - ./apps/backend:/var/www/backend
+      - /var/www/backend/.venv
       - ./packages:/var/www/packages
       - ./database:/var/www/database
     env_file:

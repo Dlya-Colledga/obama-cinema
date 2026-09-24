@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import re
 from typing import Any
@@ -19,6 +20,25 @@ class AnimeService:
         self.shikimori = shikimori
         self.kodik = kodik
 
+    async def _fill_missing_posters(self, items: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        """Fill missing or censored posters using AniList fallback in parallel."""
+        missing = [item for item in items if not item.get("posterUrl") and item.get("id")]
+        if not missing:
+            return items
+
+        async def fetch_poster(item: dict[str, Any]) -> None:
+            try:
+                anime_id = int(item["id"])
+                fallback = await self.shikimori.get_fallback_poster(anime_id)
+                if fallback:
+                    item["posterUrl"] = fallback
+                    item["poster"] = fallback
+            except Exception as e:
+                logger.debug(f"Poster fallback failed for {item.get('id')}: {e}")
+
+        await asyncio.gather(*(fetch_poster(item) for item in missing))
+        return items
+
     async def search(self, query: str, page: int = 0) -> dict[str, Any]:
         trimmed = query.strip()
         if not trimmed:
@@ -28,6 +48,7 @@ class AnimeService:
         shiki_page = max(1, page + 1)
         results = await self.shikimori.search(trimmed, page=shiki_page, limit=24)
         normalized = [self.normalize_release(r) for r in results]
+        normalized = await self._fill_missing_posters(normalized)
 
         return {
             "data": normalized,
@@ -42,6 +63,7 @@ class AnimeService:
         shiki_page = max(1, page + 1)
         results = await self.shikimori.get_popular(page=shiki_page, limit=24)
         normalized = [self.normalize_release(r) for r in results]
+        normalized = await self._fill_missing_posters(normalized)
 
         return {
             "data": normalized,
@@ -66,6 +88,21 @@ class AnimeService:
         detail["screenshots"] = [s for s in screenshots if s]
 
         normalized = self.normalize_release(detail, extended=True)
+
+        # Fallback poster if Shikimori censored/placeholder was returned
+        if not normalized.get("posterUrl"):
+            fallback_poster = await self.shikimori.get_fallback_poster(release_id)
+            if not fallback_poster:
+                # Try Kodik poster
+                k_results = await self.kodik.search_by_id(str(release_id), id_type="shikimori")
+                for kr in k_results:
+                    p = kr.get("material_data", {}).get("poster_url")
+                    if p:
+                        fallback_poster = p
+                        break
+            if fallback_poster:
+                normalized["posterUrl"] = fallback_poster
+                normalized["poster"] = fallback_poster
 
         # Strict YouTube trailer extraction
         trailer_yt_id, trailer_url = await self.get_trailer(release_id)

@@ -23,14 +23,18 @@ class ShikimoriClient:
         settings = get_settings()
         self.base_url = (base_url or settings.SHIKIMORI_API_URL).rstrip("/")
         self.user_agent = user_agent or settings.SHIKIMORI_USER_AGENT
+        self.access_token = settings.SHIKIMORI_ACCESS_TOKEN
         self.timeout = timeout
         self._client: httpx.AsyncClient | None = None
 
     async def _get_client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:
+            headers = {"User-Agent": self.user_agent}
+            if self.access_token and self.access_token.strip():
+                headers["Authorization"] = f"Bearer {self.access_token.strip()}"
             self._client = httpx.AsyncClient(
                 base_url=self.base_url,
-                headers={"User-Agent": self.user_agent},
+                headers=headers,
                 timeout=self.timeout,
                 follow_redirects=True,
             )
@@ -48,6 +52,7 @@ class ShikimoriClient:
             "page": max(1, page),
             "limit": limit,
             "order": "ranked",
+            "censored": "false",
         }
         try:
             resp = await client.get("/animes", params=params)
@@ -64,6 +69,7 @@ class ShikimoriClient:
             "order": "popularity",
             "page": max(1, page),
             "limit": limit,
+            "censored": "false",
         }
         try:
             resp = await client.get("/animes", params=params)
@@ -112,9 +118,46 @@ class ShikimoriClient:
     def format_media_url(self, path: str | None) -> str | None:
         if not path:
             return None
+        # Filter out Shikimori censored / missing placeholder images
+        if "missing_original" in path or "missing_preview" in path:
+            return None
         if path.startswith("http://") or path.startswith("https://"):
             return path
         return f"{self.SHIKIMORI_MEDIA_HOST}{path}"
+
+    async def get_fallback_poster(self, mal_id: int) -> str | None:
+        """
+        Retrieve uncensored high-resolution poster from AniList by MAL/Shikimori ID.
+        Used when Shikimori wiped or replaced the poster with a missing placeholder.
+        """
+        if not mal_id:
+            return None
+        query = f"""
+        query {{
+          Media(idMal: {mal_id}, type: ANIME) {{
+            coverImage {{
+              extraLarge
+              large
+            }}
+          }}
+        }}
+        """
+        try:
+            async with httpx.AsyncClient(timeout=4.0) as client:
+                resp = await client.post(
+                    "https://graphql.anilist.co",
+                    json={"query": query},
+                    headers={"User-Agent": self.user_agent},
+                )
+                if resp.status_code == 200:
+                    data = resp.json()
+                    media = data.get("data", {}).get("Media")
+                    if media:
+                        imgs = media.get("coverImage", {})
+                        return imgs.get("extraLarge") or imgs.get("large")
+        except Exception as e:
+            logger.warning(f"Failed to fetch fallback poster from AniList for MAL ID {mal_id}: {e}")
+        return None
 
     @staticmethod
     def extract_youtube_id(url: str) -> str | None:

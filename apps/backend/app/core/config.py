@@ -26,6 +26,7 @@ class Settings(BaseSettings):
     # External Provider Configuration
     SHIKIMORI_API_URL: str = "https://shikimori.io/api"
     SHIKIMORI_USER_AGENT: str = "ObamaCinema/1.0 (academic media aggregator)"
+    SHIKIMORI_ACCESS_TOKEN: str | None = None
     KODIK_API_TOKEN: str | None = None
 
     model_config = SettingsConfigDict(
