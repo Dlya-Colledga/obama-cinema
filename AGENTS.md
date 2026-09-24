@@ -134,6 +134,7 @@ Preserve the existing frontend architecture and functionality when modifying the
 # 4. Backend Technology Stack
 
 * Python (adhering strictly to PEP 8)
+* uv (package, dependency, virtual environment, and tool management)
 * FastAPI
 * SQLAlchemy 2.x
 * Alembic
@@ -147,13 +148,16 @@ Preserve the existing frontend architecture and functionality when modifying the
 Preferred dependency management:
 
 * `pyproject.toml`
-* Use the repository's already-established Python package manager if one exists.
-* Do not introduce multiple package managers.
+* `uv` is the ONLY Python package manager and runner for the backend.
+* Use `uv` for all dependency management (`uv add`, `uv remove`, `uv sync`), virtual environment management, and execution (`uv run`).
+* Do NOT use raw `pip` or direct `python` commands without `uv`.
+* Do not introduce multiple package managers (e.g. poetry, pipenv, conda).
 
-Recommended runtime:
+Recommended runtime & tooling:
 
 ```text
 Python 3.12+ (PEP 8 compliant)
+uv
 FastAPI
 Uvicorn
 SQLAlchemy 2.x
@@ -845,8 +849,8 @@ Never hardcode:
 
 # 29. Testing and Code Quality
 
-Backend tests use pytest.
-Static analysis and formatting use Ruff and mypy.
+Backend tests use pytest (executed via `uv run pytest`).
+Static analysis and formatting use Ruff and mypy (executed via `uv run ruff` and `uv run mypy`).
 All Python code must strictly follow PEP 8 standards.
 
 Test:
@@ -862,8 +866,9 @@ Test:
 
 Code Quality Rules:
 
-* PEP 8 compliance is enforced via `ruff` and `ruff format`
-* Type safety and consistency are enforced via `mypy`
+* All tooling commands must be run via `uv` (`uv run pytest`, `uv run ruff`, `uv run mypy`)
+* PEP 8 compliance is enforced via `uv run ruff check .` and `uv run ruff format --check .`
+* Type safety and consistency are enforced via `uv run mypy app`
 * Prefer testing behavior over implementation details.
 * Important API paths should have integration tests.
 * Tests must not depend on live external APIs unless explicitly designated as integration tests.
@@ -1168,10 +1173,11 @@ Avoid unnecessary rewrites.
 Run appropriate:
 
 ```text
-pytest
-ruff / configured linting
-mypy / configured type checking
-Alembic validation
+uv run pytest
+uv run ruff check .
+uv run ruff format --check .
+uv run mypy app
+uv run alembic upgrade head
 frontend lint
 frontend build
 ```
@@ -1248,6 +1254,8 @@ Do not:
 * copy PHP architecture literally into Python
 * put SQLAlchemy queries inside every route
 * expose SQLAlchemy models directly as API schemas
+* use `pip` or global `python` directly instead of `uv`
+* bypass `uv` for dependency and environment management
 * commit secrets
 * silently change API contracts
 * delete migrations without explicit reason
@@ -1262,15 +1270,15 @@ A backend task is complete when:
 
 * implementation is finished
 * architecture remains coherent
-* types are correct and validated with `mypy`
-* PEP 8 compliance and linting validated with `ruff check` and `ruff format`
+* types are correct and validated with `uv run mypy app`
+* PEP 8 compliance and linting validated with `uv run ruff check .` and `uv run ruff format --check .`
 * API behavior is documented/consistent
 * database changes have Alembic migrations
 * security requirements are satisfied
 * tests are added or updated where appropriate
 * existing frontend integration is preserved
-* lint/type checks pass (`ruff`, `mypy`)
-* tests pass (`pytest`)
+* lint/type checks pass (`uv run ruff`, `uv run mypy`)
+* tests pass (`uv run pytest`)
 * production build/integration checks pass where applicable
 * `git diff` has been reviewed
 * no secrets are present

@@ -54,8 +54,8 @@ done
 echo -e " ${GREEN}Готово!${NC}"
 
 echo -e "${CYAN}[3/4] Применение миграций Alembic и запуск сидеров...${NC}"
-docker compose exec -T backend python /var/www/backend/bin/migrate.py || true
-docker compose exec -T backend python /var/www/backend/bin/seed.py || true
+docker compose exec -T backend uv run python /var/www/backend/bin/migrate.py || true
+docker compose exec -T backend uv run python /var/www/backend/bin/seed.py || true
 
 echo -e "${GREEN}${BOLD}"
 echo "=========================================================="

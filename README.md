@@ -30,10 +30,13 @@
 - **ESLint** (strict quality gate)
 
 ### Backend
-- **PHP 8.3+** (`declare(strict_types=1);`, PSR-12, чистая слоистая архитектура)
-- **Слои**: Controller → Service → Repository (PDO Prepared Statements) → Database
-- **Provider Architecture**: Абстракция `ContentProviderInterface` для подключения любых внешних стримов и встроенный `DemoStreamProvider`.
-- **Безопасность**: Защита от SQL-инъекций (параметризованные запросы), XSS-санитизация, хеширование паролей Bcrypt/Argon2, проверка прав на уровне сервера.
+- **Python 3.12+** (PEP 8, строгая типизация, валидация через `mypy` и `ruff`)
+- **uv**: Управление зависимостями, окружением и запуск инструментов (`uv run`)
+- **FastAPI**: Высокопроизводительный асинхронный REST API framework
+- **SQLAlchemy 2.x** + **asyncpg**: Асинхронный ORM и миграции **Alembic**
+- **Слои**: Router → Service → Repository → SQLAlchemy 2.x → PostgreSQL
+- **Provider Architecture**: Абстракция `ContentProvider` с поддержкой внешних каталогов и стримов (Kodik, Shikimori, DemoStreamProvider).
+- **Безопасность**: Защита от SQL-инъекций (SQLAlchemy параметризованные запросы), XSS-санитизация, хеширование паролей Bcrypt, защита от IDOR, строгая проверка прав на уровне сервера.
 
 ### База данных
 - **PostgreSQL 16**: Реляционная модель, `BIGINT GENERATED ALWAYS AS IDENTITY`, внешние ключи с каскадным удалением, триггеры пересчета рейтингов, GIN-индексы для полнотекстового поиска (`tsvector`).
@@ -117,8 +120,15 @@
 ## 🧪 Тестирование и проверка качества
 
 ```bash
-# Запуск Unit-тестов бэкенда (валидация, DTO, санитизация XSS)
-php apps/backend/tests/run.php
+# Запуск тестов бэкенда (pytest через uv)
+cd apps/backend && uv run pytest -v
+
+# Проверка линтером и форматированием (Ruff через uv)
+cd apps/backend && uv run ruff check .
+cd apps/backend && uv run ruff format --check .
+
+# Статическая проверка типов (mypy через uv)
+cd apps/backend && uv run mypy app
 
 # Запуск линтера фронтенда
 npm --prefix apps/frontend run lint
@@ -135,10 +145,12 @@ npm --prefix apps/frontend run build
 /
 ├── apps/
 │   ├── frontend/                 # React 18, Vite, TypeScript, Tailwind
-│   └── backend/                  # PHP 8.3 REST API (слоистая архитектура)
-│       ├── public/index.php      # Front Controller
+│   └── backend/                  # Python 3.12+ FastAPI REST API (uv, SQLAlchemy 2.x)
+│       ├── app/                  # Router, Services, Repositories, Models, Schemas, Providers
+│       ├── alembic/              # Миграции базы данных Alembic
 │       ├── bin/                  # CLI скрипты миграций и сидеров
-│       └── src/                  # Controllers, Services, Repositories, Entities, DTO, Providers
+│       ├── tests/                # Pytest тесты
+│       └── pyproject.toml        # Конфигурация зависимостей и инструментов uv/ruff/mypy
 ├── packages/
 │   ├── shared/                   # Общие константы (роли, категории, типы)
 │   └── api-contracts/            # Интерфейсы TypeScript

@@ -3,6 +3,8 @@ import time
 import pytest
 from httpx import AsyncClient
 
+from tests.conftest import requires_postgres
+
 
 @pytest.mark.asyncio
 async def test_healthcheck(client: AsyncClient) -> None:
@@ -12,6 +14,7 @@ async def test_healthcheck(client: AsyncClient) -> None:
     assert data.get("status") == "ok"
 
 
+@requires_postgres
 @pytest.mark.asyncio
 async def test_auth_and_security(client: AsyncClient) -> None:
     ts = int(time.time() * 1000)
@@ -84,6 +87,7 @@ async def test_auth_and_security(client: AsyncClient) -> None:
     assert res.status_code == 200
 
 
+@requires_postgres
 @pytest.mark.asyncio
 async def test_user_profile(client: AsyncClient) -> None:
     ts = int(time.time() * 1000)
@@ -115,6 +119,7 @@ async def test_user_profile(client: AsyncClient) -> None:
     assert prof["avatarUrl"] == "https://example.com/avatar.jpg"
 
 
+@requires_postgres
 @pytest.mark.asyncio
 async def test_catalog_and_filtering(client: AsyncClient) -> None:
     # 1. Catalog list
@@ -143,6 +148,7 @@ async def test_catalog_and_filtering(client: AsyncClient) -> None:
     assert res.status_code == 200
 
 
+@requires_postgres
 @pytest.mark.asyncio
 async def test_content_and_seasons(client: AsyncClient) -> None:
     # Get first catalog item
@@ -171,6 +177,7 @@ async def test_content_and_seasons(client: AsyncClient) -> None:
     assert isinstance(res.json()["data"], list)
 
 
+@requires_postgres
 @pytest.mark.asyncio
 async def test_comments_and_idor(client: AsyncClient) -> None:
     cat_res = await client.get("/catalog")
@@ -239,6 +246,7 @@ async def test_comments_and_idor(client: AsyncClient) -> None:
     assert res.status_code == 200
 
 
+@requires_postgres
 @pytest.mark.asyncio
 async def test_ratings_and_bookmarks(client: AsyncClient) -> None:
     cat_res = await client.get("/catalog")
@@ -296,6 +304,7 @@ async def test_ratings_and_bookmarks(client: AsyncClient) -> None:
     assert res.status_code == 200
 
 
+@requires_postgres
 @pytest.mark.asyncio
 async def test_watch_progress_and_history(client: AsyncClient) -> None:
     cat_res = await client.get("/catalog")
@@ -345,6 +354,7 @@ async def test_watch_progress_and_history(client: AsyncClient) -> None:
     assert res.status_code == 200
 
 
+@requires_postgres
 @pytest.mark.asyncio
 async def test_anime_shikimori_kodik_api(client: AsyncClient) -> None:
     # 1. Popular anime via Shikimori
