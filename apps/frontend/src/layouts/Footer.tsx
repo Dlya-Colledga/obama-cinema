@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Film, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   return (
@@ -9,12 +9,9 @@ export const Footer: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           {/* Brand info */}
           <div className="md:col-span-2 space-y-4">
-            <Link to="/" className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#FF002F] flex items-center justify-center">
-                <Film className="w-4 h-4 text-white" />
-              </div>
-              <span className="font-extrabold text-lg text-white">
-                OBAMA<span className="text-[#FF002F] ml-0.5">CINEMA</span>
+            <Link to="/" className="inline-flex items-center group">
+              <span className="font-black text-xl tracking-wider text-white group-hover:opacity-90 transition-opacity">
+                OBAMA<span className="text-[#FF002F] ml-1.5">CINEMA</span>
               </span>
             </Link>
             <p className="text-xs text-gray-400 max-w-sm leading-relaxed">

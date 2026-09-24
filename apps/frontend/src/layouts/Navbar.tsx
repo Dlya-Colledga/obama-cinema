@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
   Search,
-  Film,
   Bookmark,
   Clock,
   User as UserIcon,
@@ -57,18 +56,10 @@ export const Navbar: React.FC = () => {
     <header className="sticky top-0 z-40 w-full glass-nav transition-all duration-300">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
         {/* Brand Logo */}
-        <Link to="/" className="flex items-center gap-2.5 group shrink-0">
-          <div className="size-10 rounded-xl bg-primary flex items-center justify-center shadow-glow-red group-hover:scale-105 transition-transform">
-            <Film className="size-5 text-white" />
-          </div>
-          <div className="flex flex-col">
-            <span className="font-extrabold text-xl tracking-wider text-white flex items-center">
-              OBAMA<span className="text-primary ml-1">CINEMA</span>
-            </span>
-            <span className="text-[10px] tracking-widest uppercase text-muted-foreground font-semibold -mt-1">
-              Онлайн Кинотеатр
-            </span>
-          </div>
+        <Link to="/" className="flex items-center group shrink-0">
+          <span className="font-black text-2xl tracking-wider text-white flex items-center group-hover:opacity-90 transition-opacity">
+            OBAMA<span className="text-primary ml-1.5">CINEMA</span>
+          </span>
         </Link>
 
         {/* Desktop Nav Links */}
@@ -201,8 +192,8 @@ export const Navbar: React.FC = () => {
             </SheetTrigger>
             <SheetContent side="right" className="w-4/5 sm:max-w-sm bg-background border-white/10 p-6">
               <SheetHeader>
-                <SheetTitle className="text-left font-extrabold text-xl tracking-wider text-white">
-                  OBAMA<span className="text-primary ml-1">CINEMA</span>
+                <SheetTitle className="text-left font-black text-2xl tracking-wider text-white">
+                  OBAMA<span className="text-primary ml-1.5">CINEMA</span>
                 </SheetTitle>
               </SheetHeader>
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Film, Lock, Mail, User, UserPlus, AlertCircle } from 'lucide-react';
+import { Lock, Mail, User, UserPlus, AlertCircle } from 'lucide-react';
 import { useAuth } from '../features/auth/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -51,12 +51,9 @@ export const RegisterPage: React.FC = () => {
       <div className="w-full max-w-md space-y-6">
         {/* Brand Header */}
         <div className="text-center space-y-2">
-          <Link to="/" className="inline-flex items-center gap-2">
-            <div className="size-10 rounded-xl bg-primary flex items-center justify-center shadow-glow-red">
-              <Film className="size-5 text-white" />
-            </div>
-            <span className="font-extrabold text-2xl text-white">
-              OBAMA<span className="text-primary ml-1">CINEMA</span>
+          <Link to="/" className="inline-flex items-center group">
+            <span className="font-black text-3xl tracking-wider text-white group-hover:opacity-90 transition-opacity">
+              OBAMA<span className="text-primary ml-1.5">CINEMA</span>
             </span>
           </Link>
           <h2 className="text-xl font-bold text-white tracking-tight">
