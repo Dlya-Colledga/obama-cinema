@@ -49,8 +49,8 @@ export const ContentDetailPage: React.FC = () => {
         {/* Netflix-style Hero Skeleton */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
           <div className="relative w-full rounded-3xl overflow-hidden border border-white/10 bg-card min-h-[480px] md:min-h-[560px] lg:min-h-[620px] flex items-end sm:items-center">
-            {/* Top-right control buttons skeleton */}
-            <div className="absolute top-4 right-4 sm:top-auto sm:bottom-6 sm:right-6 z-20 flex items-center gap-2.5">
+            {/* Top-right control buttons skeleton (desktop only) */}
+            <div className="hidden md:flex absolute top-4 right-4 sm:top-auto sm:bottom-6 sm:right-6 z-20 items-center gap-2.5">
               <Skeleton className="size-10 sm:size-11 rounded-full" />
               <Skeleton className="size-10 sm:size-11 rounded-full" />
               <Skeleton className="h-6 w-10 rounded-md" />
@@ -86,7 +86,6 @@ export const ContentDetailPage: React.FC = () => {
                 <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3 pt-2">
                   <Skeleton className="h-11 w-44 rounded-xl" />
                   <Skeleton className="h-11 w-32 rounded-xl" />
-                  <Skeleton className="h-11 w-36 rounded-xl" />
                 </div>
               </div>
             </div>

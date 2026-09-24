@@ -16,7 +16,7 @@ const badgeVariants = cva(
         outline: 'text-foreground border-white/20',
         age: 'border-primary/30 bg-background text-gray-300 font-semibold',
         type: 'border-primary/30 bg-primary/15 text-primary font-medium',
-        rating: '',
+        rating: 'border font-bold shadow-md bg-black',
       },
     },
     defaultVariants: {
@@ -33,13 +33,17 @@ export interface BadgeProps
 
 function Badge({ className, variant, ratingValue, children, ...props }: BadgeProps) {
   let customRatingClass = '';
-  if (variant === 'rating' && ratingValue !== undefined) {
-    if (ratingValue >= 7.5) {
-      customRatingClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30 font-bold';
-    } else if (ratingValue >= 6.0) {
-      customRatingClass = 'bg-amber-500/20 text-amber-400 border-amber-500/30 font-bold';
+  if (variant === 'rating') {
+    if (ratingValue !== undefined) {
+      if (ratingValue >= 7.5) {
+        customRatingClass = 'bg-black text-emerald-400 border-emerald-500/80 font-bold shadow-md';
+      } else if (ratingValue >= 6.0) {
+        customRatingClass = 'bg-black text-amber-400 border-amber-500/80 font-bold shadow-md';
+      } else {
+        customRatingClass = 'bg-black text-zinc-300 border-zinc-600 font-bold shadow-md';
+      }
     } else {
-      customRatingClass = 'bg-gray-500/20 text-gray-300 border-gray-500/30 font-bold';
+      customRatingClass = 'bg-black text-emerald-400 border-emerald-500/80 font-bold shadow-md';
     }
   }
 

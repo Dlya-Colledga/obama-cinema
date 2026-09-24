@@ -75,6 +75,22 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasError, setHasError] = useState(false);
 
+  // Check if desktop viewport (PC) - strictly disable background trailer on mobile devices
+  const [isDesktop, setIsDesktop] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(min-width: 768px)').matches;
+  });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(min-width: 768px)');
+    const onChange = (e: MediaQueryListEvent) => {
+      setIsDesktop(e.matches);
+    };
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const ytPlayerRef = useRef<YTPlayerInstance | null>(null);
   const revealTimeoutRef = useRef<number | null>(null);
@@ -85,9 +101,10 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
     ? `https://www.youtube.com/watch?v=${trailerId}`
     : content.trailerUrl || null;
 
-  // Initialize YouTube Iframe API once and create player without reloading iframe src
+  // Initialize YouTube Iframe API exclusively on desktop PCs
   useEffect(() => {
-    if (!trailerId) {
+    if (!isDesktop || !trailerId) {
+      setIsPlaying(false);
       return;
     }
 
@@ -96,7 +113,7 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
     setHasError(false);
 
     if (revealTimeoutRef.current) {
-      clearTimeout(revealTimeoutRef.current);
+      clearInterval(revealTimeoutRef.current);
       revealTimeoutRef.current = null;
     }
     if (loopIntervalRef.current) {
@@ -104,7 +121,7 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
       loopIntervalRef.current = null;
     }
 
-    // Load YouTube API script if not already present
+    // Load YouTube API script if not already present (desktop only)
     if (!window.YT || !window.YT.Player) {
       const existingScript = document.getElementById('youtube-iframe-api-script');
       if (!existingScript) {
@@ -151,20 +168,45 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
             },
             onStateChange: (event) => {
               if (!isMounted) return;
-              // 1 === PLAYING: reveal video smoothly after initial YouTube pause/controls OSD has faded out
+              // 1 === PLAYING
               if (event.data === 1) {
+                // Ensure video plays for at least 2.5s before revealing to the user
+                // YouTube's center overlay (pause/10s buttons) takes ~2.0-2.2s to fully fade away
                 if (revealTimeoutRef.current) {
-                  clearTimeout(revealTimeoutRef.current);
+                  clearInterval(revealTimeoutRef.current);
                 }
-                revealTimeoutRef.current = window.setTimeout(() => {
-                  if (isMounted) {
-                    setIsPlaying(true);
+                const startTime = Date.now();
+                revealTimeoutRef.current = window.setInterval(() => {
+                  if (!isMounted || !ytPlayerRef.current) return;
+                  try {
+                    const current = ytPlayerRef.current.getCurrentTime?.() ?? 0;
+                    const elapsed = (Date.now() - startTime) / 1000;
+                    if (current >= 2.5 || elapsed >= 4.0) {
+                      setIsPlaying(true);
+                      if (revealTimeoutRef.current) {
+                        clearInterval(revealTimeoutRef.current);
+                        revealTimeoutRef.current = null;
+                      }
+                    }
+                  } catch {
+                    // ignore
                   }
-                }, 1300);
-              }
-              // 0 === ENDED: seamless loop replay fallback
-              if (event.data === 0) {
-                event.target.seekTo(0);
+                }, 100);
+              } else if (event.data === 2) {
+                // 2 === PAUSED: immediately hide video so pause button is never visible
+                if (revealTimeoutRef.current) {
+                  clearInterval(revealTimeoutRef.current);
+                  revealTimeoutRef.current = null;
+                }
+                setIsPlaying(false);
+              } else if (event.data === 0) {
+                // 0 === ENDED: seamlessly loop replay
+                if (revealTimeoutRef.current) {
+                  clearInterval(revealTimeoutRef.current);
+                  revealTimeoutRef.current = null;
+                }
+                setIsPlaying(false);
+                event.target.seekTo(0, true);
                 event.target.playVideo();
               }
             },
@@ -187,14 +229,14 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
             if (typeof player.getCurrentTime === 'function' && typeof player.getDuration === 'function') {
               const current = player.getCurrentTime();
               const duration = player.getDuration();
-              if (duration > 0 && current >= duration - 0.4) {
+              if (duration > 0 && current >= duration - 0.5) {
                 player.seekTo(0, true);
               }
             }
           } catch {
             // ignore
           }
-        }, 300);
+        }, 250);
       } catch (e) {
         console.warn('YouTube Player initialization failed', e);
         if (isMounted) {
@@ -216,7 +258,7 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
     return () => {
       isMounted = false;
       if (revealTimeoutRef.current) {
-        clearTimeout(revealTimeoutRef.current);
+        clearInterval(revealTimeoutRef.current);
         revealTimeoutRef.current = null;
       }
       if (loopIntervalRef.current) {
@@ -232,7 +274,7 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
         ytPlayerRef.current = null;
       }
     };
-  }, [trailerId]);
+  }, [trailerId, isDesktop]);
 
   // Programmatic mute/unmute: does NOT reload iframe and does NOT affect browser history!
   const toggleMute = () => {
@@ -253,7 +295,7 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
     <div className="relative w-full rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-black min-h-[480px] md:min-h-[560px] lg:min-h-[620px] flex items-end sm:items-center">
       {hasActiveTrailer ? (
         <>
-          {/* Static backdrop poster behind video while buffering */}
+          {/* Static backdrop poster behind video while buffering or on mobile */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
             <img
               src={content.bannerUrl || content.posterUrl}
@@ -262,56 +304,60 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
             />
           </div>
 
-          {/* YouTube Video Container - Scaled and cropped to physically hide all YouTube controls */}
-          <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
-            <div
-              className={`w-[180%] h-[180%] -left-[40%] -top-[40%] absolute transition-opacity duration-700 pointer-events-none ${
-                isPlaying ? 'opacity-100' : 'opacity-0'
-              }`}
-            >
-              <div ref={containerRef} className="w-full h-full pointer-events-none" />
-            </div>
-
-            {/* Dark gradient vignettes for contrast and cinematic look */}
-            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-r from-black via-black/75 sm:via-black/60 to-transparent pointer-events-none" />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-transparent pointer-events-none" />
-          </div>
-
-          {/* Controls: Instant YouTube link button + Sound mute toggle + Age rating */}
-          <div className="absolute top-4 right-4 sm:top-auto sm:bottom-6 sm:right-6 z-20 flex items-center gap-2.5">
-            {youtubeUrl && (
-              <a
-                href={youtubeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                title="Смотреть трейлер на YouTube"
-                aria-label="Смотреть трейлер на YouTube"
-                className="size-10 sm:size-11 rounded-full bg-black/75 hover:bg-[#FF0000] border border-white/20 text-white flex items-center justify-center backdrop-blur-md transition-all hover:scale-105 active:scale-95 shadow-lg group cursor-pointer"
+          {/* YouTube Video Container - strictly desktop PC only */}
+          {isDesktop && (
+            <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+              <div
+                className={`w-[180%] h-[180%] -left-[40%] -top-[40%] absolute transition-opacity duration-700 pointer-events-none ${
+                  isPlaying ? 'opacity-100' : 'opacity-0'
+                }`}
               >
-                <svg
-                  className="size-4 sm:size-5 fill-current group-hover:scale-110 transition-transform"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                </svg>
-              </a>
-            )}
-
-            <button
-              type="button"
-              onClick={toggleMute}
-              aria-label={isMuted ? 'Включить звук' : 'Выключить звук'}
-              title={isMuted ? 'Включить звук' : 'Выключить звук'}
-              className="size-10 sm:size-11 rounded-full bg-black/75 hover:bg-black/95 border border-white/20 text-white flex items-center justify-center backdrop-blur-md transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
-            >
-              {isMuted ? <VolumeX className="size-4 sm:size-5" /> : <Volume2 className="size-4 sm:size-5" />}
-            </button>
-
-            <div className="px-2.5 sm:px-3 py-1 rounded-md border-l-2 border-white/40 bg-black/75 backdrop-blur-md text-xs font-semibold text-white/90">
-              {content.ageRating}
+                <div ref={containerRef} className="w-full h-full pointer-events-none" />
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Dark gradient vignettes for contrast and cinematic look */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/60 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 sm:via-black/70 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-transparent pointer-events-none" />
+
+          {/* Controls: strictly desktop PC only */}
+          {isDesktop && (
+            <div className="absolute top-4 right-4 sm:top-auto sm:bottom-6 sm:right-6 z-20 flex items-center gap-2.5">
+              {youtubeUrl && (
+                <a
+                  href={youtubeUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title="Смотреть трейлер на YouTube"
+                  aria-label="Смотреть трейлер на YouTube"
+                  className="size-10 sm:size-11 rounded-full bg-black/75 hover:bg-[#FF0000] border border-white/20 text-white flex items-center justify-center backdrop-blur-md transition-all hover:scale-105 active:scale-95 shadow-lg group cursor-pointer"
+                >
+                  <svg
+                    className="size-4 sm:size-5 fill-current group-hover:scale-110 transition-transform"
+                    viewBox="0 0 24 24"
+                  >
+                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+                  </svg>
+                </a>
+              )}
+
+              <button
+                type="button"
+                onClick={toggleMute}
+                aria-label={isMuted ? 'Включить звук' : 'Выключить звук'}
+                title={isMuted ? 'Включить звук' : 'Выключить звук'}
+                className="size-10 sm:size-11 rounded-full bg-black/75 hover:bg-black/95 border border-white/20 text-white flex items-center justify-center backdrop-blur-md transition-all hover:scale-105 active:scale-95 shadow-lg cursor-pointer"
+              >
+                {isMuted ? <VolumeX className="size-4 sm:size-5" /> : <Volume2 className="size-4 sm:size-5" />}
+              </button>
+
+              <div className="px-2.5 sm:px-3 py-1 rounded-md border-l-2 border-white/40 bg-black/75 backdrop-blur-md text-xs font-semibold text-white/90">
+                {content.ageRating}
+              </div>
+            </div>
+          )}
 
           {/* Left-aligned Title, Poster & Actions */}
           <div className="relative z-10 w-full max-w-4xl p-6 sm:p-10 md:p-12 flex flex-col sm:flex-row items-center sm:items-end gap-6 sm:gap-8">
@@ -378,19 +424,6 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
                   contentId={content.id}
                   initialBookmark={content.userBookmark}
                 />
-                {youtubeUrl && (
-                  <a
-                    href={youtubeUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-white/10 hover:bg-[#FF0000] text-white border border-white/10 transition-colors shadow-sm"
-                  >
-                    <svg className="size-4 fill-current" viewBox="0 0 24 24">
-                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                    </svg>
-                    Трейлер на YouTube
-                  </a>
-                )}
               </div>
             </div>
           </div>
@@ -475,19 +508,6 @@ export const NetflixTrailerHero: React.FC<NetflixTrailerHeroProps> = ({ content 
                 contentId={content.id}
                 initialBookmark={content.userBookmark}
               />
-              {youtubeUrl && (
-                <a
-                  href={youtubeUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-semibold bg-white/10 hover:bg-[#FF0000] text-white border border-white/10 transition-colors shadow-sm"
-                >
-                  <svg className="size-4 fill-current" viewBox="0 0 24 24">
-                    <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
-                  </svg>
-                  Трейлер на YouTube
-                </a>
-              )}
             </div>
           </div>
         </>
