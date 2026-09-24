@@ -43,7 +43,7 @@ cleanup() {
 
 trap cleanup INT TERM
 
-echo -e "${CYAN}[1/4] Сборка и запуск контейнеров (PostgreSQL, Backend PHP, Frontend React)...${NC}"
+echo -e "${CYAN}[1/4] Сборка и запуск контейнеров (PostgreSQL, Backend Python/FastAPI, Frontend React)...${NC}"
 docker compose up --build -d
 
 echo -e "${CYAN}[2/4] Ожидание готовности базы данных PostgreSQL...${NC}"
@@ -53,10 +53,9 @@ until docker compose exec -T postgres pg_isready -U cinema_user -d cinema_db > /
 done
 echo -e " ${GREEN}Готово!${NC}"
 
-echo -e "${CYAN}[3/4] Установка зависимостей Composer и применение миграций...${NC}"
-docker compose exec -T backend sh -c "if [ ! -f vendor/autoload.php ]; then composer dump-autoload; fi" || true
-docker compose exec -T backend php /var/www/backend/bin/migrate.php || true
-docker compose exec -T backend php /var/www/backend/bin/seed.php || true
+echo -e "${CYAN}[3/4] Применение миграций Alembic и запуск сидеров...${NC}"
+docker compose exec -T backend python /var/www/backend/bin/migrate.py || true
+docker compose exec -T backend python /var/www/backend/bin/seed.py || true
 
 echo -e "${GREEN}${BOLD}"
 echo "=========================================================="

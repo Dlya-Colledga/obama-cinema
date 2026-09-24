@@ -1,31 +1,24 @@
-FROM php:8.3-cli-alpine
+FROM python:3.13-slim
 
-# Install system dependencies and PostgreSQL development libraries
-RUN apk add --no-cache \
-    postgresql-dev \
-    libzip-dev \
-    icu-dev \
-    oniguruma-dev \
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    libpq-dev \
     curl \
     git \
     bash \
-    netcat-openbsd
-
-# Install PHP extensions
-RUN docker-php-ext-install \
-    pdo \
-    pdo_pgsql \
-    zip \
-    intl \
-    mbstring \
-    opcache
-
-# Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+    && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /var/www/backend
 
-# Default entrypoint runs the built-in development server
+# Install Python packages
+COPY apps/backend/pyproject.toml .
+RUN pip install --no-cache-dir -e ".[dev]"
+
+ENV PYTHONPATH=/var/www/backend
+ENV PYTHONUNBUFFERED=1
+
 EXPOSE 8000
-CMD ["php", "-S", "0.0.0.0:8000", "-t", "public", "public/index.php"]
+
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -e
 
-echo "=== Running Backend Tests ==="
-docker compose exec -T backend php vendor/bin/phpunit || docker compose exec -T backend php tests/run.php
+echo "=== Running Backend Pytest Suite ==="
+docker compose exec -T backend pytest -v
 
 echo "=== Running Frontend Lint & Type Checks ==="
 docker compose exec -T frontend npm run lint
