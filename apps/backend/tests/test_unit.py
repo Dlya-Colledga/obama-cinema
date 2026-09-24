@@ -197,3 +197,24 @@ def test_anime_service_normalize_release() -> None:
     assert "С давних времён" in normalized["description"]
     assert len(normalized["genres"]) == 2
     assert "Экшен" in normalized["genres"]
+
+
+def test_stream_source_schema_skip_segments() -> None:
+    """Ensure StreamSourceSchema properly includes and serializes skipSegments."""
+    from app.schemas.content import StreamSourceSchema
+
+    source = StreamSourceSchema(
+        id=5114001,
+        provider="Obama Cinema Player",
+        provider_code="kodik",
+        player_type="hls",
+        stream_url="https://cloud.solodcdn.com/test.m3u8",
+        quality="720p",
+        translation_title="Плеер Obama Cinema (HLS)",
+        skip_segments=[[85, 170]],
+    )
+    dumped = source.model_dump(by_alias=True)
+    assert dumped["id"] == 5114001
+    assert dumped["playerType"] == "hls"
+    assert dumped["skipSegments"] == [[85, 170]]
+    assert dumped["translationTitle"] == "Плеер Obama Cinema (HLS)"

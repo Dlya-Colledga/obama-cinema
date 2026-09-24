@@ -29,3 +29,4 @@ class StreamSourceSchema(CamelModel):
     stream_url: str
     quality: str = "1080p"
     translation_title: str = "Оригинал / Дубляж"
+    skip_segments: list[list[int]] = Field(default_factory=list)

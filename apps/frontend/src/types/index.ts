@@ -89,13 +89,14 @@ export interface Season {
 }
 
 export interface StreamSource {
-  id: number;
+  id: number | string;
   provider: string;
   providerCode: string;
   playerType: 'iframe' | 'hls' | 'mp4';
   streamUrl: string;
   quality: string;
   translationTitle: string;
+  skipSegments?: number[][];
 }
 
 export interface Comment {

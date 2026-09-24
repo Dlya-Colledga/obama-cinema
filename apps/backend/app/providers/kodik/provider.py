@@ -91,7 +91,33 @@ class KodikStreamProvider:
         # Get translations
         translations = await self.kodik_client.get_translations(ext_id, id_type=id_type)
 
-        # 1. Direct stream for top translations
+        # 1. HLS Stream for custom player
+        for idx, trans in enumerate(translations[:2]):
+            trans_id = str(trans.get("id") or "0")
+            trans_name = trans.get("name") or "Озвучка"
+
+            m3u8_url, m3u8_q, skip_segments = await self.kodik_client.get_m3u8_link(
+                external_id=ext_id,
+                id_type=id_type,
+                episode_num=episode_num,
+                translation_id=trans_id,
+                is_movie=is_movie,
+            )
+            if m3u8_url:
+                streams.append(
+                    {
+                        "id": content_id * 10000 + int(trans_id if trans_id.isdigit() else idx + 1),
+                        "provider": "Obama Cinema Player",
+                        "providerCode": "kodik",
+                        "streamUrl": m3u8_url,
+                        "playerType": "hls",
+                        "quality": f"{m3u8_q}p",
+                        "translationTitle": f"{trans_name} (HLS)",
+                        "skipSegments": skip_segments,
+                    }
+                )
+
+        # 2. Direct MP4 stream as backup
         for idx, trans in enumerate(translations[:2]):
             trans_id = str(trans.get("id") or "0")
             trans_name = trans.get("name") or "Озвучка"
@@ -107,28 +133,32 @@ class KodikStreamProvider:
             if stream_url:
                 streams.append(
                     {
-                        "id": content_id * 10000 + int(trans_id if trans_id.isdigit() else idx + 1),
-                        "provider": "Kodik Direct",
+                        "id": content_id * 10000
+                        + 500
+                        + int(trans_id if trans_id.isdigit() else idx + 1),
+                        "provider": "Kodik Direct MP4",
                         "providerCode": "kodik",
                         "streamUrl": stream_url,
                         "playerType": "mp4",
                         "quality": f"{quality}p",
-                        "translationTitle": trans_name,
+                        "translationTitle": f"{trans_name} (MP4)",
+                        "skipSegments": [],
                     }
                 )
 
-        # 2. Iframe embed player as fallback/alternative
+        # 3. Iframe embed player as alternative
         embed_url = await self.kodik_client.get_embed_link(ext_id, id_type=id_type)
         if embed_url:
             streams.append(
                 {
                     "id": content_id * 10000 + 9999,
-                    "provider": "Kodik Embed",
+                    "provider": "Kodik Player",
                     "providerCode": "kodik",
                     "streamUrl": embed_url,
                     "playerType": "iframe",
                     "quality": "1080p",
-                    "translationTitle": "Мультиплеер (все озвучки)",
+                    "translationTitle": "Kodik (Альтернативный плеер)",
+                    "skipSegments": [],
                 }
             )
 

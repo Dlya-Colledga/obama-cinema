@@ -261,7 +261,39 @@ class AnimeService:
         streams: list[dict[str, Any]] = []
         trans_id = str(dubber_id) if dubber_id is not None else "0"
 
-        # 1. Fetch direct MP4 stream
+        # 1. Fetch HLS M3U8 stream (primary stream for Obama Cinema custom player)
+        m3u8_url, m3u8_quality, skip_segments = await self.kodik.get_m3u8_link(
+            external_id=str(release_id),
+            id_type="shikimori",
+            episode_num=position,
+            translation_id=trans_id,
+            is_movie=False,
+        )
+        if not m3u8_url and position == 1:
+            # Fallback for full-length anime movies where episode_num is 0
+            m3u8_url, m3u8_quality, skip_segments = await self.kodik.get_m3u8_link(
+                external_id=str(release_id),
+                id_type="shikimori",
+                episode_num=0,
+                translation_id=trans_id,
+                is_movie=True,
+            )
+
+        if m3u8_url:
+            streams.append(
+                {
+                    "id": release_id * 1000 + (dubber_id or 1),
+                    "provider": "Obama Cinema Player",
+                    "providerCode": "kodik",
+                    "streamUrl": m3u8_url,
+                    "playerType": "hls",
+                    "quality": f"{m3u8_quality}p",
+                    "translationTitle": "Плеер Obama Cinema (HLS)",
+                    "skipSegments": skip_segments,
+                }
+            )
+
+        # 2. Fetch direct MP4 stream (backup for custom player)
         direct_url, quality, _ = await self.kodik.get_stream_link(
             external_id=str(release_id),
             id_type="shikimori",
@@ -269,21 +301,30 @@ class AnimeService:
             translation_id=trans_id,
             is_movie=False,
         )
+        if not direct_url and position == 1:
+            direct_url, quality, _ = await self.kodik.get_stream_link(
+                external_id=str(release_id),
+                id_type="shikimori",
+                episode_num=0,
+                translation_id=trans_id,
+                is_movie=True,
+            )
 
-        if direct_url:
+        if direct_url and direct_url != m3u8_url:
             streams.append(
                 {
-                    "id": release_id * 1000 + (dubber_id or 1),
-                    "provider": "Kodik Direct",
+                    "id": release_id * 1000 + (dubber_id or 1) + 10,
+                    "provider": "Kodik Direct MP4",
                     "providerCode": "kodik",
                     "streamUrl": direct_url,
                     "playerType": "mp4",
                     "quality": f"{quality}p",
                     "translationTitle": "Прямой поток (MP4)",
+                    "skipSegments": skip_segments,
                 }
             )
 
-        # 2. Fetch embed iframe player
+        # 3. Fetch embed iframe player (alternative player)
         embed_url = await self.kodik.get_embed_link(
             external_id=str(release_id), id_type="shikimori"
         )
@@ -296,7 +337,8 @@ class AnimeService:
                     "streamUrl": embed_url,
                     "playerType": "iframe",
                     "quality": "1080p",
-                    "translationTitle": "Мультиплеер (все озвучки)",
+                    "translationTitle": "Kodik (Альтернативный плеер)",
+                    "skipSegments": [],
                 }
             )
 

@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
-import { ChevronLeft, Layers, Play } from 'lucide-react';
+import { ChevronLeft } from 'lucide-react';
 import { api, animeApi } from '../api/client';
 import { ContentItem, StreamSource, Season, Episode, WatchProgress, AnimeDubber } from '../types';
 import { VideoPlayer } from '../features/player/VideoPlayer';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
 import { BookmarkButton } from '../features/bookmarks/BookmarkButton';
 
 export const WatchPage: React.FC = () => {
@@ -34,13 +33,16 @@ export const WatchPage: React.FC = () => {
         let activeEp: Episode | null = null;
 
         // If series or anime, load seasons and select episode
-        if (contentRes.data.contentType.code === 'series' || contentRes.data.contentType.code === 'anime') {
+        if (
+          contentRes.data.contentType.code === 'series' ||
+          contentRes.data.contentType.code === 'anime'
+        ) {
           const seasonsRes = await api.get<Season[]>(`/content/${contentRes.data.id}/seasons`);
           setSeasons(seasonsRes.data);
 
-          const allEps = seasonsRes.data.flatMap(s => s.episodes);
+          const allEps = seasonsRes.data.flatMap((s) => s.episodes);
           if (episodeParam) {
-            activeEp = allEps.find(e => e.id === parseInt(episodeParam, 10)) || null;
+            activeEp = allEps.find((e) => e.id === parseInt(episodeParam, 10)) || null;
           }
           if (!activeEp && allEps.length > 0) {
             activeEp = allEps[0];
@@ -70,9 +72,12 @@ export const WatchPage: React.FC = () => {
 
         // Load user saved progress if available
         try {
-          const progressRes = await api.get<WatchProgress | null>(`/watch/progress/${contentRes.data.id}`, {
-            episode_id: activeEp?.id || undefined,
-          });
+          const progressRes = await api.get<WatchProgress | null>(
+            `/watch/progress/${contentRes.data.id}`,
+            {
+              episode_id: activeEp?.id || undefined,
+            }
+          );
           if (progressRes.data && progressRes.data.progressSeconds > 10) {
             setInitialProgress(progressRes.data.progressSeconds);
           }
@@ -89,9 +94,19 @@ export const WatchPage: React.FC = () => {
     loadWatchData();
   }, [slug, episodeParam, selectedDubberId]);
 
-  const handleSelectEpisode = (ep: Episode) => {
+  const handleSelectEpisode = async (ep: Episode) => {
     setCurrentEpisode(ep);
     setSearchParams({ episode: String(ep.id) });
+    if (!content) return;
+    try {
+      const sourcesRes = await api.get<StreamSource[]>(`/content/${content.id}/sources`, {
+        episode_id: ep.id,
+        dubber_id: selectedDubberId || undefined,
+      });
+      setSources(sourcesRes.data);
+    } catch (e) {
+      console.error('Failed to change episode sources', e);
+    }
   };
 
   const handleSelectDubber = async (dubberId: number) => {
@@ -137,19 +152,6 @@ export const WatchPage: React.FC = () => {
             <Skeleton className="h-4 w-24 rounded" />
           </div>
         </div>
-
-        {/* Episode Selector Skeleton */}
-        <div className="space-y-4 pt-2">
-          <div className="flex items-center gap-2">
-            <Skeleton className="size-4 rounded" />
-            <Skeleton className="h-5 w-28 rounded" />
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-12 rounded-xl" />
-            ))}
-          </div>
-        </div>
       </div>
     );
   }
@@ -178,55 +180,29 @@ export const WatchPage: React.FC = () => {
           <ChevronLeft className="size-4" />
           <span>К описанию «{content.title}»</span>
         </Link>
-        <BookmarkButton
-          contentId={content.id}
-          initialBookmark={content.userBookmark}
-        />
+        <BookmarkButton contentId={content.id} initialBookmark={content.userBookmark} />
       </div>
 
-      {/* Main Cinema Player Container */}
+      {/* Main Cinema Player with Integrated Inside Dubbers & Episodes */}
       <VideoPlayer
         contentId={content.id}
+        contentTitle={content.title}
         sources={sources}
         currentEpisode={currentEpisode}
+        onSelectEpisode={handleSelectEpisode}
+        seasons={seasons}
+        dubbers={dubbers}
+        selectedDubberId={selectedDubberId}
+        onSelectDubber={handleSelectDubber}
         initialProgressSeconds={initialProgress}
       />
-
-      {/* Anime Voiceover Studio Selection */}
-      {dubbers.length > 0 && (
-        <Card className="bg-card border-white/10">
-          <CardContent className="p-4 space-y-2">
-            <span className="text-xs font-semibold text-muted-foreground">Студия озвучки (Anixart Open API):</span>
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
-              {dubbers.map((d) => {
-                const isSelected = selectedDubberId === d.id;
-                return (
-                  <Button
-                    key={d.id}
-                    variant={isSelected ? 'default' : 'secondary'}
-                    size="sm"
-                    onClick={() => handleSelectDubber(d.id)}
-                    className="h-8 text-xs shrink-0 rounded-xl"
-                  >
-                    {d.name} {d.isSub && '(Субтитры)'}
-                  </Button>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Title & Info Bar below player */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 py-4 border-b border-white/5">
         <div>
-          <h1 className="text-xl sm:text-2xl font-black text-white">
-            {content.title}
-          </h1>
+          <h1 className="text-xl sm:text-2xl font-black text-white">{content.title}</h1>
           {content.originalTitle && (
-            <p className="text-xs text-muted-foreground font-medium">
-              {content.originalTitle}
-            </p>
+            <p className="text-xs text-muted-foreground font-medium">{content.originalTitle}</p>
           )}
           {currentEpisode && (
             <p className="text-xs text-primary font-semibold mt-1">
@@ -239,48 +215,11 @@ export const WatchPage: React.FC = () => {
           <span>•</span>
           <span>{content.ageRating}</span>
           <span>•</span>
-          <span>Рейтинг: <b className="text-emerald-400">{content.ratingCache.toFixed(1)}</b></span>
+          <span>
+            Рейтинг: <b className="text-emerald-400">{content.ratingCache.toFixed(1)}</b>
+          </span>
         </div>
       </div>
-
-      {/* Episode Selection for Series and Anime */}
-      {seasons.length > 0 && (
-        <div className="space-y-4 pt-2">
-          <div className="flex items-center gap-2">
-            <Layers className="size-4 text-primary" />
-            <h3 className="text-base font-bold text-white">Выбор серии</h3>
-          </div>
-
-          <div className="space-y-4">
-            {seasons.map((season) => (
-              <div key={season.id} className="space-y-2">
-                <h4 className="text-xs font-semibold text-muted-foreground">
-                  {season.title || `Сезон ${season.seasonNumber}`}
-                </h4>
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5">
-                  {season.episodes.map((ep) => {
-                    const isCurrent = currentEpisode?.id === ep.id;
-                    return (
-                      <Button
-                        key={ep.id}
-                        variant={isCurrent ? 'default' : 'secondary'}
-                        size="sm"
-                        onClick={() => handleSelectEpisode(ep)}
-                        className={`h-auto p-2.5 justify-start gap-2 rounded-xl text-left ${
-                          isCurrent ? 'font-bold' : ''
-                        }`}
-                      >
-                        <Play className={`size-3.5 shrink-0 ${isCurrent ? 'fill-current' : 'text-muted-foreground'}`} />
-                        <span className="text-xs truncate">Серия {ep.episodeNumber}</span>
-                      </Button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

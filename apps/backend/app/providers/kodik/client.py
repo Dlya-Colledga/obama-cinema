@@ -131,6 +131,60 @@ class KodikClient:
             logger.warning(f"Kodik get_series_count failed for {id_type}:{external_id}: {e}")
             return 0
 
+    async def get_m3u8_link(
+        self,
+        external_id: str,
+        id_type: str = "shikimori",
+        episode_num: int = 1,
+        translation_id: str = "0",
+        quality: int = 720,
+        is_movie: bool = False,
+    ) -> tuple[str | None, int, list[list[int]]]:
+        """
+        Resolve HLS M3U8 playlist stream URL from Kodik CDN.
+        For movies or single videos, seria_num is 0.
+        Returns: (m3u8_url, quality_int, skip_segments)
+        """
+        parser = await self._get_parser()
+        seria_num = 0 if is_movie else max(1, episode_num)
+        trans_id = str(translation_id) if translation_id else "0"
+
+        try:
+            link_data = await parser.get_link(
+                id=str(external_id),
+                id_type=id_type,
+                seria_num=seria_num,
+                translation_id=trans_id,
+            )
+            if not link_data or not link_data[0]:
+                return None, 0, []
+
+            raw_base = link_data[0]
+            max_quality = link_data[1] if len(link_data) > 1 and link_data[1] else 720
+            skip_segments = (
+                link_data[2] if len(link_data) > 2 and isinstance(link_data[2], list) else []
+            )
+
+            selected_q = str(
+                min(quality, max_quality) if quality in [360, 480, 720] else max_quality
+            )
+
+            if raw_base.startswith("//"):
+                prefix = "https:"
+            elif raw_base.startswith("http"):
+                prefix = ""
+            else:
+                prefix = "https://"
+
+            base_clean = raw_base if raw_base.endswith("/") else f"{raw_base}/"
+            m3u8_url = f"{prefix}{base_clean}{selected_q}.mp4:hls:manifest.m3u8"
+            return m3u8_url, int(selected_q), skip_segments
+        except Exception as e:
+            logger.warning(
+                f"Kodik get_m3u8_link failed for {id_type}:{external_id} ep:{seria_num}: {e}"
+            )
+            return None, 0, []
+
     async def get_stream_link(
         self,
         external_id: str,
